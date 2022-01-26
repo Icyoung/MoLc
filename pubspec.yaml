@@ -1,18 +1,17 @@
-name: flutter_molc
+name: molc
 description: A ui component base on provider.
 version: 0.0.1
-author:
-homepage:
+homepage: https://github.com/Icyoung/MoLc
 
 environment:
-  sdk: ">=2.7.0 <3.0.0"
-  flutter: ">=1.17.0 <2.0.0"
+  sdk: ">=2.12.0 <3.0.0"
+  flutter: '>=1.12.13+hotfix.5'
 
 dependencies:
   flutter:
     sdk: flutter
 
-  provider: ^4.1.2
+  provider: ^6.0.2
 
 dev_dependencies:
   flutter_test:

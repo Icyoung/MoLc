@@ -10,6 +10,6 @@ abstract class Logic {
   T model<T extends Model>(BuildContext context) => context.read<T>();
 
   ///easy to update state
-  refresh<T extends Model>(BuildContext context, [ValueChanged<T> fn]) =>
+  refresh<T extends Model>(BuildContext context, [VoidCallback? fn]) =>
       model<T>(context).refresh<T>(fn);
 }
