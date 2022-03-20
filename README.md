@@ -13,5 +13,5 @@
 
 依靠这三种组合，可以组合出依赖多个Model多个Logic的满足需求的页面。
 
-
-
+## NoMoWidget
+内部提供ValueModel，不再需要创建Model类，适用于状态值低于三个的小组件
