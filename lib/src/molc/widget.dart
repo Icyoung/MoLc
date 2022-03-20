@@ -154,3 +154,86 @@ class MoLcWidget<T extends Model, R extends Logic> extends StatelessWidget {
     );
   }
 }
+
+/// NO Model class Widget, for simple model
+class NoMoWidget<T> extends StatelessWidget {
+  final T value;
+
+  final ModelWidgetBuilder<ValueModel<T>> builder;
+
+  NoMoWidget({
+    required this.value,
+    required this.builder,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return ChangeNotifierProvider(
+      create: (_) => ValueModel<T>(value: value),
+      child: Consumer<ValueModel<T>>(
+        builder: (context, model, child) {
+          return builder(context, model, child);
+        },
+      ),
+    );
+  }
+}
+
+class NoMo2Widget<A, B> extends StatelessWidget {
+  final A value;
+  final B value2;
+
+  final ModelWidgetBuilder<Value2Model<A, B>> builder;
+
+  NoMo2Widget({
+    required this.value,
+    required this.value2,
+    required this.builder,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return ChangeNotifierProvider(
+      create: (_) => Value2Model<A, B>(
+        value: value,
+        value2: value2,
+      ),
+      child: Consumer<Value2Model<A, B>>(
+        builder: (context, model, child) {
+          return builder(context, model, child);
+        },
+      ),
+    );
+  }
+}
+
+class NoMo3Widget<A, B, C> extends StatelessWidget {
+  final A value;
+  final B value2;
+  final C value3;
+
+  final ModelWidgetBuilder<Value3Model<A, B, C>> builder;
+
+  NoMo3Widget({
+    required this.value,
+    required this.value2,
+    required this.value3,
+    required this.builder,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return ChangeNotifierProvider(
+      create: (_) => Value3Model<A, B, C>(
+        value: value,
+        value2: value2,
+        value3: value3,
+      ),
+      child: Consumer<Value3Model<A, B, C>>(
+        builder: (context, model, child) {
+          return builder(context, model, child);
+        },
+      ),
+    );
+  }
+}

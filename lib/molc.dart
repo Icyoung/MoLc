@@ -5,3 +5,5 @@ export 'src/molc/model.dart';
 export 'src/molc/type.dart';
 export 'src/molc/widget.dart';
 export 'src/molc/builder.dart';
+export 'package:provider/src/provider.dart'
+    show ReadContext, WatchContext, MultiProvider;

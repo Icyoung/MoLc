@@ -14,7 +14,7 @@ abstract class Model with ChangeNotifier {
 
     /// refresh this model
     if (this is T) {
-      // debugPrint('refresh==>${this.runtimeType}');
+      debugPrint('refresh==>${this.runtimeType}');
       fn?.call();
       notifyListeners();
     }
@@ -77,4 +77,33 @@ abstract class PageModel<T extends Logic> extends WidgetModel {
       _logic = logic;
     }
   }
+}
+
+/// for simple model impl
+class ValueModel<T> extends Model {
+  T value;
+
+  ValueModel({required this.value});
+}
+
+class Value2Model<A, B> extends Model {
+  A value;
+  B value2;
+
+  Value2Model({
+    required this.value,
+    required this.value2,
+  });
+}
+
+class Value3Model<A, B, C> extends Model {
+  A value;
+  B value2;
+  C value3;
+
+  Value3Model({
+    required this.value,
+    required this.value2,
+    required this.value3,
+  });
 }
