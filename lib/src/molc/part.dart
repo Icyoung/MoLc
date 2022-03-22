@@ -38,11 +38,19 @@ class TopContainer extends StatelessWidget {
   }
 }
 
-mixin PartModel on Model {
-  void saveSelf(BuildContext context) {
+mixin PartModel on WidgetModel {
+  void saveSelf(BuildContext? context) {
+    (context?.read<PartModelContainer>() ?? TopModel.top<PartModelContainer>())
+        ._partModelMap[runtimeType.toString()] = this;
+  }
+
+  @override
+  void dispose() {
     context
         .read<PartModelContainer>()
-        ._partModelMap[this.runtimeType.toString()] = this;
+        ._partModelMap
+        .remove(runtimeType.toString());
+    super.dispose();
   }
 }
 
