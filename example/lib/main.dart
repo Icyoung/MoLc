@@ -2,9 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:molc/molc.dart';
 
 void main() {
-  runApp(MaterialApp(
-    home: const MainPage(),
-  ));
+  runApp(
+    const TopContainer(
+      app: MaterialApp(
+        home: MainPage(),
+      ),
+    ),
+  );
 }
 
 class MainPage extends StatelessWidget {
@@ -30,6 +34,12 @@ class MainPage extends StatelessWidget {
                 },
                 child: Text('refresh MainModel'),
               ),
+              TextButton(
+                onPressed: () {
+                  model.find<_Part1Model>().refresh();
+                },
+                child: Text('refresh Part1'),
+              ),
               Part1(),
               SizedBox(
                 height: 100,
@@ -39,6 +49,27 @@ class MainPage extends StatelessWidget {
                 height: 100,
               ),
               Part3(),
+              NoMoWidget<int>(
+                value: 99,
+                builder: (_, model, __) {
+                  debugPrint('build==>${this.runtimeType}');
+                  return Row(
+                    children: [
+                      Text(
+                        'nomo2:${model.value}',
+                      ),
+                      TextButton(
+                        onPressed: () {
+                          model
+                            ..value += 1
+                            ..refresh();
+                        },
+                        child: Text('refresh _NoMo2'),
+                      ),
+                    ],
+                  );
+                },
+              )
             ],
           ),
         );
@@ -81,7 +112,7 @@ class Part1 extends StatelessWidget {
   }
 }
 
-class _Part1Model extends Model {
+class _Part1Model extends Model with PartModel {
   int part1Num = 66;
 }
 
@@ -115,7 +146,7 @@ class _Part2Logic extends Logic {
 
   void request(BuildContext context) async {
     await Future.delayed(Duration(seconds: 1));
-    context.read<_MainModel>().refresh();
+    refresh<_MainModel>(context);
   }
 }
 

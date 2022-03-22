@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:molc/molc.dart';
 import 'package:provider/src/provider.dart';
 
 import 'logic.dart';
@@ -14,7 +15,7 @@ abstract class Model with ChangeNotifier {
 
     /// refresh this model
     if (this is T) {
-      debugPrint('refresh==>${this.runtimeType}');
+      // debugPrint('refresh==>${this.runtimeType}');
       fn?.call();
       notifyListeners();
     }

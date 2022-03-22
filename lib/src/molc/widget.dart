@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:molc/src/molc/part.dart';
 import 'package:provider/provider.dart';
 
 import 'builder.dart';
@@ -35,6 +36,7 @@ class ModelWidget<T extends Model> extends StatelessWidget {
         child: Consumer<T>(
           builder: (context, model, child) {
             if (model is WidgetModel) model.attach(context);
+            if (model is PartModel) model.saveSelf(context);
             return builder(context, model, child);
           },
           child: child,
@@ -46,6 +48,7 @@ class ModelWidget<T extends Model> extends StatelessWidget {
       child: Consumer<T>(
         builder: (context, model, child) {
           if (model is WidgetModel && !model.attached) model.attach(context);
+          if (model is PartModel) model.saveSelf(context);
           return builder(context, model, child);
         },
         child: child,
