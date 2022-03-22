@@ -43,3 +43,6 @@ app.*.map.json
 # Android Studio will place build artifacts here
 /android/
 /ios/
+/macos/
+/web/
+/windows/
