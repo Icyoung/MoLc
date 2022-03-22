@@ -112,7 +112,7 @@ class Part1 extends StatelessWidget {
   }
 }
 
-class _Part1Model extends Model with PartModel {
+class _Part1Model extends WidgetModel with PartModel {
   int part1Num = 66;
 }
 
