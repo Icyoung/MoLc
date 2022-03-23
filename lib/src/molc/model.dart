@@ -15,7 +15,7 @@ abstract class Model with ChangeNotifier {
 
     /// refresh this model
     if (this is T) {
-      // debugPrint('refresh==>${this.runtimeType}');
+      debugPrint('refresh==>${this.runtimeType}');
       fn?.call();
       notifyListeners();
     }

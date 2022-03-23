@@ -3,12 +3,23 @@ import 'package:molc/molc.dart';
 
 void main() {
   runApp(
-    const TopContainer(
-      app: MaterialApp(
+    TopContainer(
+      topModels: [
+        ChangeNotifierProvider(create: (_) => TestEventModel()),
+      ],
+      app: const MaterialApp(
         home: MainPage(),
       ),
     ),
   );
+}
+
+enum TestEvent { event1, event2, event3, event4 }
+
+class TestEventModel extends TopModel with EventModel<TestEvent> {
+  TestEventModel() {
+    registerSelf();
+  }
 }
 
 class MainPage extends StatelessWidget {
@@ -36,19 +47,32 @@ class MainPage extends StatelessWidget {
               ),
               TextButton(
                 onPressed: () {
-                  model.find<_Part1Model>().refresh();
+                  context.read<TestEventModel>().refreshEvent(TestEvent.event4);
+                },
+                child: Text('refresh event4'),
+              ),
+              TextButton(
+                onPressed: () {
+                  model.find<_Part1Model>()?.refresh();
                 },
                 child: Text('refresh Part1'),
               ),
               Part1(),
               SizedBox(
-                height: 100,
+                height: 20,
               ),
               Part2(),
               SizedBox(
-                height: 100,
+                height: 20,
               ),
               Part3(),
+              SizedBox(
+                height: 20,
+              ),
+              Part4(),
+              SizedBox(
+                height: 20,
+              ),
               NoMoWidget<int>(
                 value: 99,
                 builder: (_, model, __) {
@@ -78,10 +102,12 @@ class MainPage extends StatelessWidget {
   }
 }
 
-class _MainModel extends Model {}
+class _MainModel extends WidgetModel {}
 
 class _MainLogic extends Logic {
-  void init(_MainModel model) {}
+  void init(_MainModel model) {
+    model.context.read<TestEventModel>();
+  }
 }
 
 class Part1 extends StatelessWidget {
@@ -174,5 +200,37 @@ class Part3 extends StatelessWidget {
         );
       },
     );
+  }
+}
+
+class Part4 extends StatelessWidget {
+  const Part4({Key? key}) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return MoLcWidget<_Part4Model, _Part4Logic>(
+        modelCreate: (_) => _Part4Model(),
+        logicCreate: (_) => _Part4Logic(),
+        init: (_, model, logic) => logic.init(model),
+        builder: (_, model, logic, __) {
+          debugPrint('build==>${this.runtimeType}');
+
+          return Row(
+            children: [
+              Text(
+                'part4',
+              ),
+            ],
+          );
+        });
+  }
+}
+
+class _Part4Model extends WidgetModel
+    with PartModel, EventConsumerForPartModel {}
+
+class _Part4Logic extends Logic {
+  void init(_Part4Model model) {
+    model.listenTopModelEvent(TestEvent.event4);
   }
 }

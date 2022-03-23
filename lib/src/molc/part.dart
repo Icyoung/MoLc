@@ -1,42 +1,10 @@
+import 'dart:collection';
+
 import 'package:flutter/widgets.dart';
+import 'package:molc/src/molc/top.dart';
 import 'package:provider/provider.dart';
-import 'package:provider/single_child_widget.dart';
 
 import 'model.dart';
-
-GlobalKey topKey = GlobalKey();
-
-class TopModel extends Model {
-  static bool get isReady => topKey.currentContext != null;
-
-  static T top<T extends TopModel>() => topKey.currentContext!.read<T>();
-}
-
-class TopContainer extends StatelessWidget {
-  final Widget app;
-  final List<SingleChildWidget>? topModels;
-
-  const TopContainer({
-    required this.app,
-    this.topModels,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return MultiProvider(
-      providers: [
-        ChangeNotifierProvider.value(value: PartModelContainer()),
-        ...topModels ?? []
-      ],
-      child: Consumer<PartModelContainer>(
-        key: topKey,
-        builder: (context, container, _) => app,
-
-        ///do something for topContainer
-      ),
-    );
-  }
-}
 
 mixin PartModel on WidgetModel {
   void saveSelf(BuildContext? context) {
@@ -54,19 +22,30 @@ mixin PartModel on WidgetModel {
   }
 }
 
-class PartModelContainer extends TopModel {
-  Map<String, PartModel> _partModelMap = Map();
+class PartModelContainer extends TopModel with EventContainer {
+  Map<String, PartModel> _partModelMap = SplayTreeMap();
 
-  static T find<T extends PartModel>({BuildContext? context}) {
+  static T? find<T extends PartModel>({BuildContext? context}) {
+    return findFuzzy(T.toString(), context: context) as T;
+  }
+
+  static PartModel? findFuzzy(String partModelType, {BuildContext? context}) {
     final container = context != null
         ? context.read<PartModelContainer>()
         : TopModel.top<PartModelContainer>();
-    return container._partModelMap[T.toString()] as T;
+    if (!container._partModelMap.containsKey(partModelType)) {
+      return null;
+    }
+    return container._partModelMap[partModelType];
   }
 }
 
 extension FindChildModel on Model {
-  T find<T extends PartModel>({BuildContext? context}) {
+  T? find<T extends PartModel>({BuildContext? context}) {
     return PartModelContainer.find<T>(context: context);
+  }
+
+  PartModel? findFuzzy(String type, {BuildContext? context}) {
+    return PartModelContainer.findFuzzy(type, context: context);
   }
 }
