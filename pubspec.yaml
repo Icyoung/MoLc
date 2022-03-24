@@ -1,6 +1,6 @@
 name: molc
 description: A ui component base on provider.
-version: 0.0.4
+version: 0.0.5
 homepage: https://github.com/Icyoung/MoLc
 
 environment:
