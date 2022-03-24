@@ -4,23 +4,21 @@ import 'package:molc/molc.dart';
 void main() {
   runApp(
     TopContainer(
-      topModels: [
-        ChangeNotifierProvider(create: (_) => TestEventModel()),
-      ],
-      app: const MaterialApp(
+      topModels: topModels,
+      app: MaterialApp(
         home: MainPage(),
       ),
     ),
   );
 }
 
+final topModels = [
+  ChangeNotifierProvider(create: (_) => TestEventModel()),
+];
+
 enum TestEvent { event1, event2, event3, event4 }
 
-class TestEventModel extends TopModel with EventModel<TestEvent> {
-  TestEventModel() {
-    registerSelf();
-  }
-}
+class TestEventModel extends TopModel with EventModel<TestEvent> {}
 
 class MainPage extends StatelessWidget {
   const MainPage({Key? key}) : super(key: key);
