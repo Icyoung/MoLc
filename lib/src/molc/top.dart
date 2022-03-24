@@ -5,33 +5,34 @@ import 'package:provider/single_child_widget.dart';
 import 'container.dart';
 import 'model.dart';
 
-GlobalKey topKey = GlobalKey();
-
 class TopModel extends Model {
   static bool get isReady => topKey.currentContext != null;
 
   static T top<T extends TopModel>() => topKey.currentContext!.read<T>();
 }
 
-final partModelContainerProvider =
+final coreContainerProvider =
     ChangeNotifierProvider.value(value: CoreContainer());
 
-class TopContainer extends StatelessWidget {
-  final Widget app;
-  final List<SingleChildWidget>? topModels;
+final topKey = GlobalKey();
 
-  const TopContainer({
-    required this.app,
-    this.topModels,
-  });
+class TopProvider extends StatelessWidget {
+  final Widget child;
+  final List<SingleChildWidget>? providers;
+
+  const TopProvider({
+    Key? key,
+    required this.child,
+    this.providers,
+  }) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
     return MultiProvider(
-      providers: [partModelContainerProvider, ...topModels ?? []],
+      providers: [coreContainerProvider, ...providers ?? []],
       child: Builder(
         key: topKey,
-        builder: (_) => app,
+        builder: (_) => child,
       ),
     );
   }

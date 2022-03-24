@@ -3,9 +3,9 @@ import 'package:molc/molc.dart';
 
 void main() {
   runApp(
-    TopContainer(
-      topModels: topModels,
-      app: MaterialApp(
+    TopProvider(
+      providers: topModels,
+      child: MaterialApp(
         home: MainPage(),
       ),
     ),
@@ -224,8 +224,7 @@ class Part4 extends StatelessWidget {
   }
 }
 
-class _Part4Model extends WidgetModel
-    with PartModel, EventConsumerForPartModel {}
+class _Part4Model extends WidgetModel with PartModel, EventConsumerForModel {}
 
 class _Part4Logic extends Logic {
   void init(_Part4Model model) {
