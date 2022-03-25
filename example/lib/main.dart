@@ -51,7 +51,7 @@ class MainPage extends StatelessWidget {
               ),
               TextButton(
                 onPressed: () {
-                  model.find<_Part1Model>()?.refresh();
+                  find<_Part1Model>()?.refresh();
                 },
                 child: Text('refresh Part1'),
               ),

@@ -38,12 +38,10 @@ mixin PartModelContainerForTopModel on TopModel {
   }
 }
 
-extension FindChildModel on Model {
-  T? find<T extends PartModel>({BuildContext? context}) {
-    return PartModelContainerForTopModel.find<T>(context: context);
-  }
+T? find<T extends PartModel>({BuildContext? context}) {
+  return PartModelContainerForTopModel.find<T>(context: context);
+}
 
-  PartModel? findFuzzy(String type, {BuildContext? context}) {
-    return PartModelContainerForTopModel.findFuzzy(type, context: context);
-  }
+PartModel? findFuzzy(String type, {BuildContext? context}) {
+  return PartModelContainerForTopModel.findFuzzy(type, context: context);
 }

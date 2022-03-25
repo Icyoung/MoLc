@@ -1,17 +1,83 @@
 # MoLc
 
-⛩一款基于Provider封装的UI组件
+⛩A UI Component base on Provider.
 
-## ModelWidget
-只依赖单个Model的小组件，随Model状态变化而刷新状态，适合没有逻辑的页面
+By using MoLc, you can:
 
-## LogicWidget
-只依赖单个Logic的小组件，适合没有状态变化但需要初始化的组件
+* The decoupling between the Business Logic, the UI and the UI State Model.
 
-## MoLcWidget
-以上两种的组合的小组件，依赖一个Model和一个Logic，即拆分一个页面的逻辑和状态
+* The State Sharing of Crossing Page.
 
-依靠这三种组合，可以组合出依赖多个Model多个Logic的满足需求的页面。
+* The global Model but partly refresh.
 
-## NoMoWidget
-内部提供ValueModel，不再需要创建Model类，适用于状态值低于三个的小组件
+## MoLcWidget Sample
+
+Need some template codes, you can using Live Templates of IDE to gen it.
+```
+class ExamplePage extends StatelessWidget {
+  const ExamplePage({Key? key}) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return MoLcWidget<_ExampleModel, _ExampleLogic>(
+      modelCreate: (_) => _ExampleModel(),
+      logicCreate: (_) => _ExampleLogic(),
+      init: (_, model, logic) => logic.init(model),
+      builder: (context, model, logic, __) => Container(),
+    );
+  }
+}
+
+class _ExampleModel extends Model {}
+
+class _ExampleLogic extends Logic {
+  void init(_ExampleModel model) {}
+}
+```
+
+## Share you model Step 
+
+Firstly，you need wrap a TopProvider above you app, like this:
+```
+ TopProvider(
+      providers: ...,      /// you can custom your topModels here.
+      child: MaterialApp(
+        ...
+      ),
+    ),
+```
+
+Then, you mixin the PartModel on the Model you want to share.
+```
+class Test1Model extends WidgetModel with PartModel {}
+```
+
+Now, you can find the PartModel at any where, if it is exist and active.
+```
+find<Test1Model>()?.refresh();
+
+```
+
+## Partly refresh for global Model
+
+Custom event enum for topModel.
+```
+enum TestEvent { event1, event2, event3 }
+```
+
+Mixin EventModel on your topModel.
+```
+class TestTopModel extends TopModel with EventModel<TestEvent> {}
+```
+
+Mixin EventConsumerForModel on your event listener model.
+```
+class Test2Model extends Model with EventConsumerForModel {}
+```
+
+Now, you can refresh partly you topModel.
+```
+testTopModel.refreshEvent(TestEvent.event1);
+```
+
+
