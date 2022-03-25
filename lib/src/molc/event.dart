@@ -37,7 +37,7 @@ mixin EventConsumerForModel on Model {
     events.add(event);
     final eventContainer = TopModel.top<CoreContainer>();
     eventContainer._addModelListener(this, event, () {
-      if (test?.call() ?? true && !this.disposed) (refresh ?? this.refresh)();
+      if (!disposed && (test?.call() ?? true)) (refresh ?? this.refresh)();
     });
   }
 
