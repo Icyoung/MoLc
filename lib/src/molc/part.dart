@@ -15,7 +15,7 @@ mixin PartModel on WidgetModel {
 
   @override
   void dispose() {
-    context.read<CoreContainer>()._partModelMap.remove(runtimeType.toString());
+    TopModel.top<CoreContainer>()._partModelMap.remove(runtimeType.toString());
     super.dispose();
   }
 }
