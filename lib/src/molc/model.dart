@@ -13,13 +13,17 @@ abstract class Model with ChangeNotifier {
   void refresh<T extends Model>([VoidCallback? fn]) {
     if (disposed) return;
 
+    if (!shouldRefresh()) return;
+
     /// refresh this model
     if (this is T) {
-      debugPrint('refresh==>${this.runtimeType}');
+      // debugPrint('refresh==>${this.runtimeType}');
       fn?.call();
       notifyListeners();
     }
   }
+
+  bool shouldRefresh() => true;
 
   @override
   void dispose() {
@@ -63,19 +67,6 @@ abstract class WidgetModel extends Model {
     if (!(this is T)) {
       fn?.call();
       context.read<T>().refresh();
-    }
-  }
-}
-
-abstract class PageModel<T extends Logic> extends WidgetModel {
-  T? _logic;
-
-  T get logic => _logic!;
-
-  ///easy to get logic
-  void contact(Logic logic) {
-    if (logic is T) {
-      _logic = logic;
     }
   }
 }

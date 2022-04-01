@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:molc/molc.dart';
 
@@ -46,6 +48,7 @@ class MainPage extends StatelessWidget {
               TextButton(
                 onPressed: () {
                   context.read<TestEventModel>().refreshEvent(TestEvent.event4);
+                  logic.listen();
                 },
                 child: Text('refresh event4'),
               ),
@@ -103,8 +106,23 @@ class MainPage extends StatelessWidget {
 class _MainModel extends WidgetModel {}
 
 class _MainLogic extends Logic {
+  StreamController? controller;
+  StreamSubscription? sub;
+
   void init(_MainModel model) {
     model.context.read<TestEventModel>();
+    controller = StreamController();
+    Timer.periodic(Duration(milliseconds: 500), (timer) {
+      controller?.add('...');
+    });
+    listen();
+  }
+
+  listen() {
+    sub?.cancel();
+    sub = controller?.stream.asBroadcastStream().listen((event) {
+      debugPrint('$event');
+    });
   }
 }
 
@@ -170,7 +188,7 @@ class _Part2Logic extends Logic {
 
   void request(BuildContext context) async {
     await Future.delayed(Duration(seconds: 1));
-    refresh<_MainModel>(context);
+    context.read<_MainModel>().refresh();
   }
 }
 

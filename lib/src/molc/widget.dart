@@ -5,55 +5,46 @@ import 'package:provider/provider.dart';
 import 'builder.dart';
 import 'logic.dart';
 import 'model.dart';
-import 'top.dart';
 import 'type.dart';
 
 class ModelWidget<T extends Model> extends StatelessWidget {
-  ModelWidget({
-    Key? key,
-    this.create,
-    required this.builder,
-    this.child,
-    this.value,
-  })  : assert(create != null || value != null),
-        super(key: key);
-
-  final Create<T>? create;
+  Create<T>? create;
+  T? value;
   final ModelWidgetBuilder<T> builder;
   final Widget? child;
-  T? value;
+
+  ModelWidget({
+    Key? key,
+    required Create<T> create,
+    required this.builder,
+    this.child,
+  })  : this.create = create,
+        super(key: key);
 
   ModelWidget.value(
       {Key? key, required T value, required this.builder, this.child})
       : this.value = value,
-        this.create = ((_) => value),
         super(key: key);
 
   @override
   Widget build(BuildContext context) {
+    final consumer = Consumer<T>(
+      builder: (context, model, child) {
+        if (model is WidgetModel) model.attach(context);
+        if (model is PartModel) model.saveSelf(context);
+        return builder(context, model, child);
+      },
+      child: child,
+    );
     if (value != null) {
       return ChangeNotifierProvider.value(
         value: value!,
-        child: Consumer<T>(
-          builder: (context, model, child) {
-            if (model is WidgetModel) model.attach(context);
-            if (model is PartModel) model.saveSelf(context);
-            return builder(context, model, child);
-          },
-          child: child,
-        ),
+        child: consumer,
       );
     }
     return ChangeNotifierProvider<T>(
       create: create!,
-      child: Consumer<T>(
-        builder: (context, model, child) {
-          if (model is WidgetModel && !model.attached) model.attach(context);
-          if (model is PartModel) model.saveSelf(context);
-          return builder(context, model, child);
-        },
-        child: child,
-      ),
+      child: consumer,
     );
   }
 }
@@ -93,20 +84,27 @@ class LogicWidget<T extends Logic> extends StatelessWidget {
 }
 
 class MoLcWidget<T extends Model, R extends Logic> extends StatelessWidget {
+  Create<T>? modelCreate;
+  T? modelValue;
+  final Create<R> logicCreate;
+  final ModelLogicInit<T, R>? init;
+  final ModelLogicWidgetBuilder<T, R> builder;
+  final Widget? child;
+  final bool lazy;
+
   MoLcWidget(
       {Key? key,
-      this.modelCreate,
+      required Create<T> modelCreate,
       required this.logicCreate,
       required this.builder,
       this.child,
       this.init,
       this.lazy = false,
       this.modelValue})
-      : assert(modelCreate != null || modelValue != null),
+      : this.modelCreate = modelCreate,
         super(key: key);
 
-  /// 目前dart泛型并不支持构造器，暂时将value放入默认构造器
-  MoLcWidget.modelValue({
+  MoLcWidget.value({
     Key? key,
     required T modelValue,
     required this.logicCreate,
@@ -115,46 +113,31 @@ class MoLcWidget<T extends Model, R extends Logic> extends StatelessWidget {
     this.init,
     this.lazy = false,
   })  : this.modelValue = modelValue,
-        modelCreate = ((_) => modelValue),
         super(key: key);
-
-  final Create<T>? modelCreate;
-  final Create<R> logicCreate;
-  final ModelLogicInit<T, R>? init;
-  final ModelLogicWidgetBuilder<T, R> builder;
-  final Widget? child;
-  final bool lazy;
-  T? modelValue;
 
   @override
   Widget build(BuildContext context) {
-    if (modelValue != null) {
-      return ModelWidget(
-        value: modelValue!,
-        child: child,
-        builder: (context, model, child) => LogicWidget<R>(
+    final logicWidgetBuilder = (context, model, child) => LogicWidget<R>(
           create: logicCreate,
           builder: (context, logic) {
-            if (model is PageModel) model.contact(logic);
-            return builder(context, model as T, logic, child);
+            if (logic is WidgetLogic) logic.attach(context);
+
+            return builder(context, model, logic, child);
           },
-          init: (context, logic) => init?.call(context, model as T, logic),
+          init: (context, logic) => init?.call(context, model, logic),
           lazy: lazy,
-        ),
+        );
+    if (modelValue != null) {
+      return ModelWidget.value(
+        value: modelValue!,
+        child: child,
+        builder: logicWidgetBuilder,
       );
     }
     return ModelWidget<T>(
-      create: modelCreate,
+      create: modelCreate!,
       child: child,
-      builder: (context, model, child) => LogicWidget<R>(
-        create: logicCreate,
-        builder: (context, logic) {
-          if (model is PageModel) model.contact(logic);
-          return builder(context, model, logic, child);
-        },
-        init: (context, logic) => init?.call(context, model, logic),
-        lazy: lazy,
-      ),
+      builder: logicWidgetBuilder,
     );
   }
 }
