@@ -31,9 +31,13 @@ class ModelWidget<T extends Model> extends StatelessWidget {
     final consumer = Consumer<T>(
       builder: (context, model, child) {
         ///attached prevent muti
-        if (model is WidgetModel && !model.attached) model.attach(context);
-        if (model is ExposedMixin && !(model as ExposedMixin).exposed)
-          (model as ExposedMixin).saveSelf(context);
+        if (model is WidgetModel) model.attach(context);
+        if (model is ExposedMixin) {
+          final exposed = model as ExposedMixin;
+          if (!exposed.exposed) {
+            exposed.saveSelf(context);
+          }
+        }
         return builder(context, model, child);
       },
       child: child,
@@ -75,7 +79,12 @@ class LogicWidget<T extends Logic> extends StatelessWidget {
       }, initial: (context, _) {
         final logic = context.read<T>();
         if (logic is WidgetLogic) logic.attach(context);
-        if (logic is ExposedMixin) (logic as ExposedMixin).saveSelf(context);
+        if (logic is ExposedMixin) {
+          final exposed = logic as ExposedMixin;
+          if (!exposed.exposed) {
+            exposed.saveSelf(context);
+          }
+        }
         return init?.call(context, logic);
       }),
       dispose: (context, logic) => logic.dispose(),
