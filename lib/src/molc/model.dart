@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:molc/molc.dart';
-import 'package:provider/src/provider.dart';
 
-import 'logic.dart';
+abstract class Disposable {
+  void dispose();
+}
 
-abstract class Model with ChangeNotifier {
+abstract class Model extends Disposable with ChangeNotifier {
   bool _disposed = false;
 
   bool get disposed => _disposed;
@@ -25,6 +26,7 @@ abstract class Model with ChangeNotifier {
 
   bool shouldRefresh() => true;
 
+  @mustCallSuper
   @override
   void dispose() {
     _disposed = true;

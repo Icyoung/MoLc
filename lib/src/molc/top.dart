@@ -7,9 +7,9 @@ import 'model.dart';
 
 class TopModel extends Model {
   static bool get isReady => topKey.currentContext != null;
-
-  static T top<T extends TopModel>() => topKey.currentContext!.read<T>();
 }
+
+T top<T extends TopModel>() => topKey.currentContext!.read<T>();
 
 final coreContainerProvider =
     ChangeNotifierProvider.value(value: CoreContainer());

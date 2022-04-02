@@ -1,22 +1,17 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
 
 import 'model.dart';
 
-abstract class Logic {
-  @protected
+abstract class Logic extends Disposable {
   void dispose() {}
 }
 
-abstract class WidgetLogic<T extends Model> extends Logic {
+abstract class WidgetLogic extends Logic {
   BuildContext? _context;
 
   BuildContext get context => _context!;
 
-  T get model => context.read<T>();
-
-  ///easy to update state
-  refresh([VoidCallback? fn]) => model.refresh(fn);
+  BuildContext? get contextOrNull => _context;
 
   ///easy to get context
   void attach(BuildContext context) {
@@ -26,6 +21,30 @@ abstract class WidgetLogic<T extends Model> extends Logic {
   @override
   void dispose() {
     _context = null;
+    super.dispose();
+  }
+
+  bool get disposed =>
+      _context == null ||
+      (context as Element).toStringShort().endsWith('(DEFUNCT)');
+}
+
+abstract class MoLogic<T extends Model> extends WidgetLogic {
+  T? _model;
+
+  T get model => _model!;
+
+  ///easy to get context
+  void contact(T model) {
+    _model = model;
+  }
+
+  ///easy to update state
+  refresh([VoidCallback? fn]) => model.refresh(fn);
+
+  @override
+  void dispose() {
+    _model = null;
     super.dispose();
   }
 }

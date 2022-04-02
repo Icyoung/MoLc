@@ -1,6 +1,6 @@
 import 'event.dart';
-import 'part.dart';
+import 'exposed.dart';
 import 'top.dart';
 
 class CoreContainer extends TopModel
-    with PartModelContainerForTopModel, EventContainerForTopModel {}
+    with ExposedContainerMixin, EventContainerMixin {}

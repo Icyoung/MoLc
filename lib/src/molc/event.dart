@@ -1,20 +1,19 @@
 import 'dart:collection';
 
-import 'package:flutter/widgets.dart';
 import 'package:molc/molc.dart';
 import 'package:molc/src/molc/container.dart';
 
 /// T is Event Type, can use enum
 mixin EventModel<T> on TopModel {
   void refreshEvent(T event) {
-    final listeners = TopModel.top<CoreContainer>()._getModelListeners(event);
+    final listeners = top<CoreContainer>()._getModelListeners(event);
     listeners?.forEach((_, refresh) {
       refresh.call();
     });
   }
 }
 
-mixin EventContainerForTopModel on TopModel {
+mixin EventContainerMixin on TopModel {
   Map<String, Map<String, void Function()>> _eventModelMap = SplayTreeMap();
 
   Map<String, void Function()>? _getModelListeners<T>(T event) =>
@@ -31,12 +30,12 @@ mixin EventContainerForTopModel on TopModel {
   }
 }
 
-mixin EventConsumerForModel on Model {
+mixin EventConsumerMixin on Model {
   Set events = Set();
 
   void listenTopModelEvent<T>(T event, {void refresh()?, bool test()?}) {
     events.add(event);
-    final eventContainer = TopModel.top<CoreContainer>();
+    final eventContainer = top<CoreContainer>();
     eventContainer._addModelListener(this, event, () {
       if (!disposed && (test?.call() ?? true)) (refresh ?? this.refresh)();
     });
@@ -45,7 +44,7 @@ mixin EventConsumerForModel on Model {
   @override
   void dispose() {
     events.forEach((e) {
-      final eventContainer = TopModel.top<CoreContainer>();
+      final eventContainer = top<CoreContainer>();
       eventContainer._removeModelListener(this, e);
     });
     super.dispose();

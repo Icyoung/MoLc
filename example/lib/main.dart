@@ -154,7 +154,7 @@ class Part1 extends StatelessWidget {
   }
 }
 
-class _Part1Model extends WidgetModel with PartModel {
+class _Part1Model extends Model with ExposedMixin {
   int part1Num = 66;
 }
 
@@ -242,7 +242,7 @@ class Part4 extends StatelessWidget {
   }
 }
 
-class _Part4Model extends WidgetModel with PartModel, EventConsumerForModel {}
+class _Part4Model extends Model with ExposedMixin, EventConsumerMixin {}
 
 class _Part4Logic extends Logic {
   void init(_Part4Model model) {

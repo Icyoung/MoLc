@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:molc/src/molc/part.dart';
+import 'package:molc/src/molc/exposed.dart';
 import 'package:provider/provider.dart';
 
 import 'builder.dart';
@@ -30,8 +30,10 @@ class ModelWidget<T extends Model> extends StatelessWidget {
   Widget build(BuildContext context) {
     final consumer = Consumer<T>(
       builder: (context, model, child) {
-        if (model is WidgetModel) model.attach(context);
-        if (model is PartModel) model.saveSelf(context);
+        ///attached prevent muti
+        if (model is WidgetModel && !model.attached) model.attach(context);
+        if (model is ExposedMixin && !(model as ExposedMixin).exposed)
+          (model as ExposedMixin).saveSelf(context);
         return builder(context, model, child);
       },
       child: child,
@@ -67,17 +69,16 @@ class LogicWidget<T extends Logic> extends StatelessWidget {
   Widget build(BuildContext context) {
     return Provider<T>(
       create: create,
-      child: InitialBuilder(
-        builder: (context) => builder(
-          context,
-          context.watch<T>(),
-        ),
-        initial: (context, _) => init?.call(
-          context,
-          context.read<T>(),
-        ),
-      ),
-      dispose: (_, v) => v.dispose(),
+      child: InitialBuilder(builder: (context) {
+        final logic = context.read<T>();
+        return builder(context, logic);
+      }, initial: (context, _) {
+        final logic = context.read<T>();
+        if (logic is WidgetLogic) logic.attach(context);
+        if (logic is ExposedMixin) (logic as ExposedMixin).saveSelf(context);
+        return init?.call(context, logic);
+      }),
+      dispose: (context, logic) => logic.dispose(),
       lazy: lazy,
     );
   }
@@ -119,12 +120,11 @@ class MoLcWidget<T extends Model, R extends Logic> extends StatelessWidget {
   Widget build(BuildContext context) {
     final logicWidgetBuilder = (context, model, child) => LogicWidget<R>(
           create: logicCreate,
-          builder: (context, logic) {
-            if (logic is WidgetLogic) logic.attach(context);
-
-            return builder(context, model, logic, child);
+          builder: (context, logic) => builder(context, model, logic, child),
+          init: (context, logic) {
+            if (logic is MoLogic) logic.contact(model);
+            init?.call(context, model, logic);
           },
-          init: (context, logic) => init?.call(context, model, logic),
           lazy: lazy,
         );
     if (modelValue != null) {

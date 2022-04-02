@@ -6,7 +6,7 @@ export 'src/molc/type.dart';
 export 'src/molc/widget.dart';
 export 'src/molc/builder.dart';
 export 'src/molc/top.dart';
-export 'src/molc/part.dart';
+export 'src/molc/exposed.dart';
 export 'src/molc/event.dart';
 export 'package:provider/src/provider.dart'
     show ReadContext, WatchContext, MultiProvider;
