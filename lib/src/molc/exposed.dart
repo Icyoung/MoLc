@@ -39,17 +39,17 @@ mixin ExposedContainerMixin on TopModel {
   Map<String, ExposedMixin> _exposedModelMap = SplayTreeMap();
 
   static T? find<T extends ExposedMixin>({BuildContext? context}) {
-    return findFuzzy(T.toString(), context: context) as T;
+    return findFuzzy(T.toString(), context: context) as T?;
   }
 
-  static ExposedMixin? findFuzzy(String partModelType,
+  static ExposedMixin? findFuzzy(String exposedModelType,
       {BuildContext? context}) {
     final container =
         context != null ? context.read<CoreContainer>() : top<CoreContainer>();
-    if (!container._exposedModelMap.containsKey(partModelType)) {
+    if (!container._exposedModelMap.containsKey(exposedModelType)) {
       return null;
     }
-    return container._exposedModelMap[partModelType];
+    return container._exposedModelMap[exposedModelType];
   }
 }
 

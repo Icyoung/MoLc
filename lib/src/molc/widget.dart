@@ -30,7 +30,7 @@ class ModelWidget<T extends Model> extends StatelessWidget {
   Widget build(BuildContext context) {
     final consumer = Consumer<T>(
       builder: (context, model, child) {
-        ///attached prevent muti
+        ///need multi attach
         if (model is WidgetModel) model.attach(context);
         if (model is ExposedMixin) {
           final exposed = model as ExposedMixin;
