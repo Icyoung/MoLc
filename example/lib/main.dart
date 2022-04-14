@@ -134,7 +134,7 @@ class MainPage extends StatelessWidget {
                         MutableWidget(
                           (context) => Row(
                             children: [
-                              Text(ghi.value.toString()),
+                              Text((ghi.value + abc.value).toString()),
                               TextButton(
                                   onPressed: () {
                                     ghi.value += 1;

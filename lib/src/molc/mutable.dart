@@ -8,7 +8,9 @@ class Mutable<T> extends RefreshDelegate {
   late Queue<T> _data;
 
   T get value {
-    refresh ??= RefreshDelegate.delegate;
+    final entry = RefreshDelegate._delegate!;
+    _refreshMap ??= SplayTreeMap();
+    _refreshMap![entry.key] = entry.value;
     return _data.last;
   }
 
@@ -17,7 +19,7 @@ class Mutable<T> extends RefreshDelegate {
       _data.removeFirst();
     }
     _data.add(value);
-    refresh?.call();
+    _refreshMap?.values.forEach((e) => e.call());
   }
 
   Mutable(T value) : _data = Queue.from([value]);
@@ -43,23 +45,16 @@ class _MutableState extends State<MutableWidget> {
   }
 
   @override
-  Widget build(BuildContext context) =>
-      RefreshDelegate.delegateBuild(context, widget.builder, refresh);
+  Widget build(BuildContext context) {
+    RefreshDelegate._delegate = MapEntry(hashCode, refresh);
+    return widget.builder(context);
+  }
 }
 
 abstract class RefreshDelegate {
-  static VoidCallback? delegate;
+  static MapEntry<int, VoidCallback>? _delegate;
 
-  VoidCallback? refresh;
-
-  static Widget delegateBuild(
-    BuildContext context,
-    WidgetBuilder builder,
-    VoidCallback refresh,
-  ) {
-    RefreshDelegate.delegate = refresh;
-    return builder(context);
-  }
+  Map<int, VoidCallback>? _refreshMap;
 }
 
 extension MutableStringExt on String {
