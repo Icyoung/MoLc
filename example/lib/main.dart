@@ -42,113 +42,129 @@ class MainPage extends StatelessWidget {
         debugPrint('build==>${this.runtimeType}');
         return Scaffold(
           appBar: AppBar(),
-          body: SingleChildScrollView(
-            child: Container(
-              color: Colors.white,
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  TextButton(
-                    onPressed: () {
-                      model.refresh();
-                    },
-                    child: Text('refresh MainModel'),
+          body: CustomScrollView(
+            slivers: [
+              SliverToBoxAdapter(
+                child: Container(
+                  color: Colors.white,
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      TextButton(
+                        onPressed: () {
+                          model.refresh();
+                        },
+                        child: Text('refresh MainModel'),
+                      ),
+                      TextButton(
+                        onPressed: () {
+                          context
+                              .read<TestEventModel>()
+                              .refreshEvent(TestEvent.event4);
+                          logic.listen();
+                        },
+                        child: Text('refresh event4'),
+                      ),
+                      TextButton(
+                        onPressed: () {
+                          find<_Part1Model>()?.refresh();
+                        },
+                        child: Text('refresh Part1'),
+                      ),
+                      Part1(),
+                      SizedBox(
+                        height: 20,
+                      ),
+                      Part2(),
+                      SizedBox(
+                        height: 20,
+                      ),
+                      Part3(),
+                      SizedBox(
+                        height: 20,
+                      ),
+                      Part4(),
+                      SizedBox(
+                        height: 20,
+                      ),
+                      NoMoWidget<int>(
+                        value: 99,
+                        builder: (_, model, __) {
+                          debugPrint('build==>${this.runtimeType}');
+                          return Row(
+                            children: [
+                              Text(
+                                'nomo2:${model.value}',
+                              ),
+                              TextButton(
+                                onPressed: () {
+                                  model
+                                    ..value += 1
+                                    ..refresh();
+                                },
+                                child: Text('refresh _NoMo2'),
+                              ),
+                            ],
+                          );
+                        },
+                      ),
+                      SizedBox(
+                        height: 20,
+                      ),
+                    ],
                   ),
-                  TextButton(
-                    onPressed: () {
-                      context
-                          .read<TestEventModel>()
-                          .refreshEvent(TestEvent.event4);
-                      logic.listen();
-                    },
-                    child: Text('refresh event4'),
-                  ),
-                  TextButton(
-                    onPressed: () {
-                      find<_Part1Model>()?.refresh();
-                    },
-                    child: Text('refresh Part1'),
-                  ),
-                  Part1(),
-                  SizedBox(
-                    height: 20,
-                  ),
-                  Part2(),
-                  SizedBox(
-                    height: 20,
-                  ),
-                  Part3(),
-                  SizedBox(
-                    height: 20,
-                  ),
-                  Part4(),
-                  SizedBox(
-                    height: 20,
-                  ),
-                  NoMoWidget<int>(
-                    value: 99,
-                    builder: (_, model, __) {
-                      debugPrint('build==>${this.runtimeType}');
-                      return Row(
-                        children: [
-                          Text(
-                            'nomo2:${model.value}',
-                          ),
-                          TextButton(
-                            onPressed: () {
-                              model
-                                ..value += 1
-                                ..refresh();
-                            },
-                            child: Text('refresh _NoMo2'),
-                          ),
-                        ],
-                      );
-                    },
-                  ),
-                  SizedBox(
-                    height: 20,
-                  ),
-                  MutableWidget(
-                    (context) => Row(
+                ),
+              ),
+              SliverToBoxAdapter(
+                child: Container(
+                  height: 100,
+                  child: ListView.builder(
+                    itemCount: 10,
+                    itemBuilder: (_, __) => Column(
                       children: [
-                        Text(abc.value.toString()),
-                        TextButton(
-                            onPressed: () {
-                              abc.value += 1;
-                            },
-                            child: Text('+1')),
-                      ],
-                    ),
-                  ),
-                  MutableWidget(
-                    (context) => Row(
-                      children: [
-                        Text(def.value.toString()),
-                        TextButton(
-                            onPressed: () {
-                              def.value -= 1;
-                            },
-                            child: Text('-1')),
                         MutableWidget(
                           (context) => Row(
                             children: [
-                              Text((ghi.value + abc.value).toString()),
+                              Text(def.value.toString()),
                               TextButton(
                                   onPressed: () {
-                                    ghi.value += 1;
+                                    def.value -= 1;
+                                  },
+                                  child: Text('-1')),
+                              MutableWidget(
+                                (context) => Row(
+                                  children: [
+                                    Text((ghi.value + abc.value).toString()),
+                                    TextButton(
+                                        onPressed: () {
+                                          ghi.value += 1;
+                                        },
+                                        child: Text('+1')),
+                                  ],
+                                ),
+                              )
+                            ],
+                          ),
+                        ),
+                        MutableWidget(
+                          (context) => Row(
+                            children: [
+                              Text(abc.value.toString()),
+                              TextButton(
+                                  onPressed: () {
+                                    abc.value += 1;
                                   },
                                   child: Text('+1')),
                             ],
                           ),
-                        )
+                        ),
                       ],
                     ),
                   ),
-                ],
+                ),
               ),
-            ),
+            ],
           ),
         );
       },

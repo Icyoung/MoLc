@@ -1,6 +1,8 @@
 import 'dart:collection';
 
-import 'package:flutter/cupertino.dart';
+import 'package:flutter/widgets.dart';
+
+import 'type.dart';
 
 const int _MUTABLE_SIZE = 3;
 
@@ -19,7 +21,14 @@ class Mutable<T> extends RefreshDelegate {
       _data.removeFirst();
     }
     _data.add(value);
-    _refreshMap?.values.forEach((e) => e.call());
+
+    final removeSet = Set();
+    _refreshMap?.forEach((k, v) {
+      if (!v.call()) removeSet.add(k);
+    });
+    removeSet.forEach((e) {
+      _refreshMap?.remove(e);
+    });
   }
 
   Mutable(T value) : _data = Queue.from([value]);
@@ -40,8 +49,11 @@ class MutableWidget extends StatefulWidget {
 }
 
 class _MutableState extends State<MutableWidget> {
-  void refresh() {
-    if (mounted) setState(() {});
+  bool refresh() {
+    if (mounted) {
+      setState(() {});
+    }
+    return mounted;
   }
 
   @override
@@ -52,9 +64,9 @@ class _MutableState extends State<MutableWidget> {
 }
 
 abstract class RefreshDelegate {
-  static MapEntry<int, VoidCallback>? _delegate;
+  static MapEntry<int, RefreshCallback>? _delegate;
 
-  Map<int, VoidCallback>? _refreshMap;
+  Map<int, RefreshCallback>? _refreshMap;
 }
 
 extension MutableStringExt on String {

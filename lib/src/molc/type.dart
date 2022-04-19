@@ -12,3 +12,5 @@ typedef ModelLogicWidgetBuilder<T, R> = Widget Function(
 typedef LogicInit<T> = Function(BuildContext, T);
 
 typedef ModelLogicInit<T, R> = Function(BuildContext, T, R);
+
+typedef RefreshCallback = bool Function();
