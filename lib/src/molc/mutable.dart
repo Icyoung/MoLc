@@ -17,6 +17,7 @@ class Mutable<T> extends RefreshDelegate {
   }
 
   set value(T value) {
+    if (value == _data.last) return;
     if (_data.length == _MUTABLE_SIZE) {
       _data.removeFirst();
     }
