@@ -1,8 +1,8 @@
-import 'package:flutter/material.dart';
-import 'package:molc/src/molc/exposed.dart';
+import 'package:flutter/widgets.dart';
 import 'package:provider/provider.dart';
 
 import 'builder.dart';
+import 'exposed.dart';
 import 'logic.dart';
 import 'model.dart';
 import 'type.dart';

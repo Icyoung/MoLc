@@ -1,7 +1,8 @@
 import 'dart:collection';
 
-import 'package:molc/molc.dart';
-import 'package:molc/src/molc/container.dart';
+import 'container.dart';
+import 'model.dart';
+import 'top.dart';
 
 /// T is Event Type, can use enum
 mixin EventModel<T> on TopModel {
