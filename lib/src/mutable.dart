@@ -206,30 +206,35 @@ extension MutableNumFunExt<T extends num> on Mutable<T?> {
     if (value != null) {
       return value! * other;
     }
+    return null;
   }
 
   num? operator %(num other) {
     if (value != null) {
       return value! % other;
     }
+    return null;
   }
 
   double? operator /(num other) {
     if (value != null) {
       return value! / other;
     }
+    return null;
   }
 
   int? operator ~/(num other) {
     if (value != null) {
       return value! ~/ other;
     }
+    return null;
   }
 
   num? operator -() {
     if (value != null) {
       return -value!;
     }
+    return null;
   }
 
   num? remainder(num other) => value?.remainder(other);
@@ -238,24 +243,28 @@ extension MutableNumFunExt<T extends num> on Mutable<T?> {
     if (value != null) {
       return value! < other;
     }
+    return null;
   }
 
   bool? operator <=(num other) {
     if (value != null) {
       return value! <= other;
     }
+    return null;
   }
 
   bool? operator >(num other) {
     if (value != null) {
       return value! > other;
     }
+    return null;
   }
 
   bool? operator >=(num other) {
     if (value != null) {
       return value! >= other;
     }
+    return null;
   }
 
   bool? get isNaN => value?.isNaN;

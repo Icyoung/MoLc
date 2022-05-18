@@ -1,7 +1,6 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
-import 'package:get/get.dart';
 import 'package:molc/molc.dart';
 
 void main() {
@@ -39,7 +38,7 @@ class MainPage extends StatelessWidget {
       logicCreate: (_) => _MainLogic(),
       init: (_, model, logic) => logic.init(model),
       builder: (_, model, logic, __) {
-        debugPrint('build==>${this.runtimeType}');
+        debugPrint('build==>$runtimeType');
         return Scaffold(
           appBar: AppBar(),
           body: CustomScrollView(
@@ -55,7 +54,7 @@ class MainPage extends StatelessWidget {
                         onPressed: () {
                           model.refresh();
                         },
-                        child: Text('refresh MainModel'),
+                        child: const Text('refresh MainModel'),
                       ),
                       TextButton(
                         onPressed: () {
@@ -64,34 +63,34 @@ class MainPage extends StatelessWidget {
                               .refreshEvent(TestEvent.event4);
                           logic.listen();
                         },
-                        child: Text('refresh event4'),
+                        child: const Text('refresh event4'),
                       ),
                       TextButton(
                         onPressed: () {
                           find<_Part1Model>()?.refresh();
                         },
-                        child: Text('refresh Part1'),
+                        child: const Text('refresh Part1'),
                       ),
-                      Part1(),
-                      SizedBox(
+                      const Part1(),
+                      const SizedBox(
                         height: 20,
                       ),
-                      Part2(),
-                      SizedBox(
+                      const Part2(),
+                      const SizedBox(
                         height: 20,
                       ),
-                      Part3(),
-                      SizedBox(
+                      const Part3(),
+                      const SizedBox(
                         height: 20,
                       ),
-                      Part4(),
-                      SizedBox(
+                      const Part4(),
+                      const SizedBox(
                         height: 20,
                       ),
                       NoMoWidget<int>(
                         value: 99,
                         builder: (_, model, __) {
-                          debugPrint('build==>${this.runtimeType}');
+                          debugPrint('build==>$runtimeType');
                           return Row(
                             children: [
                               Text(
@@ -103,13 +102,13 @@ class MainPage extends StatelessWidget {
                                     ..value += 1
                                     ..refresh();
                                 },
-                                child: Text('refresh _NoMo2'),
+                                child: const Text('refresh _NoMo2'),
                               ),
                             ],
                           );
                         },
                       ),
-                      SizedBox(
+                      const SizedBox(
                         height: 20,
                       ),
                     ],
@@ -117,7 +116,7 @@ class MainPage extends StatelessWidget {
                 ),
               ),
               SliverToBoxAdapter(
-                child: Container(
+                child: SizedBox(
                   height: 100,
                   child: ListView.builder(
                     itemCount: 10,
@@ -131,7 +130,7 @@ class MainPage extends StatelessWidget {
                                   onPressed: () {
                                     def.value -= 1;
                                   },
-                                  child: Text('-1')),
+                                  child: const Text('-1')),
                               MutableWidget(
                                 (context) => Row(
                                   children: [
@@ -140,7 +139,7 @@ class MainPage extends StatelessWidget {
                                         onPressed: () {
                                           ghi.value += 1;
                                         },
-                                        child: Text('+1')),
+                                        child: const Text('+1')),
                                   ],
                                 ),
                               )
@@ -155,7 +154,7 @@ class MainPage extends StatelessWidget {
                                   onPressed: () {
                                     abc.value += 1;
                                   },
-                                  child: Text('+1')),
+                                  child: const Text('+1')),
                             ],
                           ),
                         ),
@@ -193,14 +192,14 @@ class _MainLogic extends Logic {
 }
 
 class Part1 extends StatelessWidget {
-  Part1({Key? key}) : super(key: key);
+  const Part1({Key? key}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
     return ModelWidget<_Part1Model>(
       create: (_) => _Part1Model(),
       builder: (_, model, __) {
-        debugPrint('build==>${this.runtimeType}');
+        debugPrint('build==>$runtimeType');
         return Row(
           children: [
             Text(
@@ -211,7 +210,7 @@ class Part1 extends StatelessWidget {
                 model.part1Num += 1;
                 model.refresh();
               },
-              child: Text('refresh _Part1Model'),
+              child: const Text('refresh _Part1Model'),
             ),
           ],
         );
@@ -233,14 +232,14 @@ class Part2 extends StatelessWidget {
       create: (_) => _Part2Logic(),
       init: (_, logic) => logic.init(),
       builder: (context, logic) {
-        debugPrint('build==>${this.runtimeType}');
+        debugPrint('build==>$runtimeType');
         return Row(
           children: [
             TextButton(
               onPressed: () {
                 logic.request(context);
               },
-              child: Text('_Part2Logic.request\nthen refresh _MainModel'),
+              child: const Text('_Part2Logic.request\nthen refresh _MainModel'),
             ),
           ],
         );
@@ -253,18 +252,20 @@ class _Part2Logic extends Logic {
   void init() {}
 
   void request(BuildContext context) async {
-    await Future.delayed(Duration(seconds: 1));
+    await Future.delayed(const Duration(seconds: 1));
     context.read<_MainModel>().refresh();
   }
 }
 
 class Part3 extends StatelessWidget {
+  const Part3({Key? key}) : super(key: key);
+
   @override
   Widget build(BuildContext context) {
     return NoMoWidget<int>(
       value: 99,
       builder: (_, model, __) {
-        debugPrint('build==>${this.runtimeType}');
+        debugPrint('build==>$runtimeType');
         return Row(
           children: [
             Text(
@@ -276,7 +277,7 @@ class Part3 extends StatelessWidget {
                   ..value += 1
                   ..refresh();
               },
-              child: Text('refresh _NoMo'),
+              child: const Text('refresh _NoMo'),
             ),
           ],
         );
@@ -295,13 +296,11 @@ class Part4 extends StatelessWidget {
         logicCreate: (_) => _Part4Logic(),
         init: (_, model, logic) => logic.init(model),
         builder: (_, model, logic, __) {
-          debugPrint('build==>${this.runtimeType}');
+          debugPrint('build==>$runtimeType');
 
           return Row(
-            children: [
-              Text(
-                'part4',
-              ),
+            children: const [
+              Text('part4'),
             ],
           );
         });

@@ -7,23 +7,27 @@ import 'logic.dart';
 import 'model.dart';
 import 'type.dart';
 
+@immutable
 class ModelWidget<T extends Model> extends StatelessWidget {
-  Create<T>? create;
-  T? value;
+  final Create<T>? create;
+  final T? value;
   final ModelWidgetBuilder<T> builder;
   final Widget? child;
 
   ModelWidget({
     Key? key,
-    required Create<T> create,
+    required this.create,
     required this.builder,
     this.child,
-  })  : this.create = create,
+  })  : value = null,
         super(key: key);
 
-  ModelWidget.value(
-      {Key? key, required T value, required this.builder, this.child})
-      : this.value = value,
+  ModelWidget.value({
+    Key? key,
+    required this.value,
+    required this.builder,
+    this.child,
+  })  : create = null,
         super(key: key);
 
   @override
@@ -93,36 +97,36 @@ class LogicWidget<T extends Logic> extends StatelessWidget {
   }
 }
 
+@immutable
 class MoLcWidget<T extends Model, R extends Logic> extends StatelessWidget {
-  Create<T>? modelCreate;
-  T? modelValue;
+  final Create<T>? modelCreate;
+  final T? modelValue;
   final Create<R> logicCreate;
   final ModelLogicInit<T, R>? init;
   final ModelLogicWidgetBuilder<T, R> builder;
   final Widget? child;
   final bool lazy;
 
-  MoLcWidget(
-      {Key? key,
-      required Create<T> modelCreate,
-      required this.logicCreate,
-      required this.builder,
-      this.child,
-      this.init,
-      this.lazy = false,
-      this.modelValue})
-      : this.modelCreate = modelCreate,
-        super(key: key);
-
-  MoLcWidget.value({
+  MoLcWidget({
     Key? key,
-    required T modelValue,
+    required this.modelCreate,
     required this.logicCreate,
     required this.builder,
     this.child,
     this.init,
     this.lazy = false,
-  })  : this.modelValue = modelValue,
+  })  : modelValue = null,
+        super(key: key);
+
+  MoLcWidget.value({
+    Key? key,
+    required this.modelValue,
+    required this.logicCreate,
+    required this.builder,
+    this.child,
+    this.init,
+    this.lazy = false,
+  })  : modelCreate = null,
         super(key: key);
 
   @override
