@@ -17,12 +17,12 @@ mixin ExposedMixin on Disposable {
 
   void saveSelf(BuildContext? context) {
     (context?.read<CoreContainer>() ?? top<CoreContainer>())
-        ._exposedModelMap[runtimeType.toString()] = this;
+        ._exposedMap[runtimeType.toString()] = this;
     _exposed = true;
   }
 
   void removeSelf() {
-    top<CoreContainer>()._exposedModelMap.remove(runtimeType.toString());
+    top<CoreContainer>()._exposedMap.remove(runtimeType.toString());
     _exposed = false;
   }
 
@@ -36,7 +36,7 @@ mixin ExposedMixin on Disposable {
 }
 
 mixin ExposedContainerMixin on TopModel {
-  Map<String, ExposedMixin> _exposedModelMap = SplayTreeMap();
+  Map<String, ExposedMixin> _exposedMap = SplayTreeMap();
 
   static T? find<T extends ExposedMixin>({BuildContext? context}) {
     return findFuzzy(T.toString(), context: context) as T?;
@@ -46,10 +46,10 @@ mixin ExposedContainerMixin on TopModel {
       {BuildContext? context}) {
     final container =
         context != null ? context.read<CoreContainer>() : top<CoreContainer>();
-    if (!container._exposedModelMap.containsKey(exposedModelType)) {
+    if (!container._exposedMap.containsKey(exposedModelType)) {
       return null;
     }
-    return container._exposedModelMap[exposedModelType];
+    return container._exposedMap[exposedModelType];
   }
 }
 
