@@ -4,32 +4,32 @@ import 'package:flutter/widgets.dart';
 
 import 'type.dart';
 
-const int _MUTABLE_SIZE = 3;
+const int _mutableSize = 3;
 
 class Mutable<T> extends RefreshDelegate {
-  late Queue<T> _data;
+  late final Queue<T> _data;
 
   T get value {
     final entry = RefreshDelegate._delegate!;
-    _refreshMap ??= SplayTreeMap();
+    _refreshMap ??= <Object, RefreshCallback>{};
     _refreshMap![entry.key] = entry.value;
     return _data.last;
   }
 
   set value(T value) {
     if (value == _data.last) return;
-    if (_data.length == _MUTABLE_SIZE) {
+    if (_data.length == _mutableSize) {
       _data.removeFirst();
     }
     _data.add(value);
 
-    final removeSet = Set();
+    final removeSet = <Object>{};
     _refreshMap?.forEach((k, v) {
       if (!v.call()) removeSet.add(k);
     });
-    removeSet.forEach((e) {
+    for (final e in removeSet) {
       _refreshMap?.remove(e);
-    });
+    }
   }
 
   Mutable(T value) : _data = Queue.from([value]);
@@ -43,7 +43,7 @@ class Mutable<T> extends RefreshDelegate {
 class MutableWidget extends StatefulWidget {
   final WidgetBuilder builder;
 
-  const MutableWidget(this.builder);
+  const MutableWidget(this.builder, {super.key});
 
   @override
   State<StatefulWidget> createState() => _MutableState();
@@ -59,15 +59,15 @@ class _MutableState extends State<MutableWidget> {
 
   @override
   Widget build(BuildContext context) {
-    RefreshDelegate._delegate = MapEntry(hashCode, refresh);
+    RefreshDelegate._delegate = MapEntry(this, refresh);
     return widget.builder(context);
   }
 }
 
 abstract class RefreshDelegate {
-  static MapEntry<int, RefreshCallback>? _delegate;
+  static MapEntry<Object, RefreshCallback>? _delegate;
 
-  Map<int, RefreshCallback>? _refreshMap;
+  Map<Object, RefreshCallback>? _refreshMap;
 }
 
 extension MutableStringExt on String {

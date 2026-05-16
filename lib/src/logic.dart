@@ -3,6 +3,7 @@ import 'package:flutter/widgets.dart';
 import 'model.dart';
 
 abstract class Logic extends Disposable {
+  @override
   void dispose() {}
 }
 
@@ -24,9 +25,9 @@ abstract class WidgetLogic extends Logic {
     super.dispose();
   }
 
-  bool get disposed =>
-      _context == null ||
-      (context as Element).toStringShort().endsWith('(DEFUNCT)');
+  bool get disposed => _context == null;
+
+  void reassemble() {}
 }
 
 abstract class MoLogic<T extends Model> extends WidgetLogic {
@@ -40,7 +41,7 @@ abstract class MoLogic<T extends Model> extends WidgetLogic {
   }
 
   ///easy to update state
-  refresh([VoidCallback? fn]) => model.refresh(fn);
+  void refresh([VoidCallback? fn]) => model.refresh(fn);
 
   @override
   void dispose() {

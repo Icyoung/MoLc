@@ -1,10 +1,11 @@
 import 'package:flutter/widgets.dart';
-import 'package:provider/provider.dart';
 
 import 'builder.dart';
+import 'event.dart';
 import 'exposed.dart';
 import 'logic.dart';
 import 'model.dart';
+import 'provider.dart';
 import 'type.dart';
 
 @immutable
@@ -14,86 +15,154 @@ class ModelWidget<T extends Model> extends StatelessWidget {
   final ModelWidgetBuilder<T> builder;
   final Widget? child;
 
-  ModelWidget({
-    Key? key,
+  const ModelWidget({
+    super.key,
     required this.create,
     required this.builder,
     this.child,
-  })  : value = null,
-        super(key: key);
+  }) : value = null;
 
-  ModelWidget.value({
-    Key? key,
+  const ModelWidget.value({
+    super.key,
     required this.value,
     required this.builder,
     this.child,
-  })  : create = null,
-        super(key: key);
+  }) : create = null;
 
   @override
   Widget build(BuildContext context) {
-    final consumer = Consumer<T>(
-      builder: (context, model, child) {
-        ///need multi attach
-        if (model is WidgetModel) model.attach(context);
-        if (model is ExposedMixin) {
-          final exposed = model as ExposedMixin;
-          if (!exposed.exposed) {
-            exposed.saveSelf(context);
-          }
-        }
-        return builder(context, model, child);
-      },
+    final consumer = _ModelConsumer<T>(
+      builder: builder,
       child: child,
     );
-    if (value != null) {
-      return ChangeNotifierProvider.value(
-        value: value!,
+    final v = value;
+    if (v != null) {
+      return MoNotifierProvider<T>.value(
+        value: v,
         child: consumer,
       );
     }
-    return ChangeNotifierProvider<T>(
+    return MoNotifierProvider<T>(
       create: create!,
       child: consumer,
     );
   }
 }
 
-class LogicWidget<T extends Logic> extends StatelessWidget {
+class _ModelConsumer<T extends Model> extends StatefulWidget {
+  final ModelWidgetBuilder<T> builder;
+  final Widget? child;
+
+  const _ModelConsumer({
+    required this.builder,
+    this.child,
+  });
+
+  @override
+  State<_ModelConsumer<T>> createState() => _ModelConsumerState<T>();
+}
+
+class _ModelConsumerState<T extends Model> extends State<_ModelConsumer<T>> {
+  T? _model;
+
+  @override
+  Widget build(BuildContext context) {
+    final model = context.watch<T>();
+
+    if (!identical(_model, model)) {
+      _detachModel(_model);
+      _model = model;
+      _attachModel(model);
+    }
+    return widget.builder(context, model, widget.child);
+  }
+
+  void _attachModel(T model) {
+    if (model is WidgetModel) model.attach(context);
+    if (model is ExposedMixin) {
+      (model as ExposedMixin).saveSelf(context, owner: this);
+    }
+    if (model is EventConsumerMixin) {
+      (model as EventConsumerMixin).attachTopModelEventOwner(this);
+    }
+  }
+
+  void _detachModel(T? model) {
+    if (model == null) return;
+    if (model is WidgetModel) model.detach(context);
+    if (model is ExposedMixin) {
+      (model as ExposedMixin).removeSelf(owner: this);
+    }
+    if (model is EventConsumerMixin) {
+      (model as EventConsumerMixin).detachTopModelEventOwner(this);
+    }
+  }
+
+  @override
+  void dispose() {
+    _detachModel(_model);
+    _model = null;
+    super.dispose();
+  }
+}
+
+class LogicWidget<T extends Logic> extends StatefulWidget {
   const LogicWidget({
-    Key? key,
+    super.key,
     required this.create,
     required this.builder,
     this.init,
-    this.lazy = false,
-  }) : super(key: key);
+  });
 
   final Create<T> create;
   final LogicWidgetBuilder<T> builder;
   final LogicInit<T>? init;
-  final bool lazy;
+
+  @override
+  State<LogicWidget<T>> createState() => _LogicWidgetState<T>();
+}
+
+class _LogicWidgetState<T extends Logic> extends State<LogicWidget<T>> {
+  late final T _logic;
+
+  @override
+  void initState() {
+    super.initState();
+    _logic = widget.create(context);
+  }
 
   @override
   Widget build(BuildContext context) {
-    return Provider<T>(
-      create: create,
-      child: InitialBuilder(builder: (context) {
-        final logic = context.read<T>();
-        return builder(context, logic);
-      }, initial: (context, _) {
-        final logic = context.read<T>();
-        if (logic is WidgetLogic) logic.attach(context);
-        if (logic is ExposedMixin) {
-          final exposed = logic as ExposedMixin;
-          if (!exposed.exposed) {
-            exposed.saveSelf(context);
+    return MoProvider<T>.value(
+      value: _logic,
+      child: InitialBuilder(
+        builder: (context) {
+          final logic = context.read<T>();
+          return widget.builder(context, logic);
+        },
+        initial: (context, _) {
+          final logic = context.read<T>();
+          if (logic is WidgetLogic) logic.attach(context);
+          if (logic is ExposedMixin) {
+            final exposed = logic as ExposedMixin;
+            if (!exposed.exposed) {
+              exposed.saveSelf(context, owner: this);
+            }
           }
-        }
-        return init?.call(context, logic);
-      }),
-      dispose: (context, logic) => logic.dispose(),
-      lazy: lazy,
+          widget.init?.call(context, logic);
+        },
+        reassemble: (context, _) {
+          final logic = context.read<T>();
+          if (logic is WidgetLogic) logic.reassemble();
+        },
+      ),
     );
+  }
+
+  @override
+  void dispose() {
+    _logic.dispose();
+    super.dispose();
   }
 }
 
@@ -105,87 +174,85 @@ class MoLcWidget<T extends Model, R extends Logic> extends StatelessWidget {
   final ModelLogicInit<T, R>? init;
   final ModelLogicWidgetBuilder<T, R> builder;
   final Widget? child;
-  final bool lazy;
 
-  MoLcWidget({
-    Key? key,
+  const MoLcWidget({
+    super.key,
     required this.modelCreate,
     required this.logicCreate,
     required this.builder,
     this.child,
     this.init,
-    this.lazy = false,
-  })  : modelValue = null,
-        super(key: key);
+  }) : modelValue = null;
 
-  MoLcWidget.value({
-    Key? key,
+  const MoLcWidget.value({
+    super.key,
     required this.modelValue,
     required this.logicCreate,
     required this.builder,
     this.child,
     this.init,
-    this.lazy = false,
-  })  : modelCreate = null,
-        super(key: key);
+  }) : modelCreate = null;
+
+  Widget _logicLayer(BuildContext context, T model, Widget? child) {
+    return LogicWidget<R>(
+      create: logicCreate,
+      init: (context, logic) {
+        if (logic is MoLogic) logic.contact(model);
+        init?.call(context, model, logic);
+      },
+      builder: (context, logic) => builder(context, model, logic, child),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
-    final logicWidgetBuilder = (context, model, child) => LogicWidget<R>(
-          create: logicCreate,
-          builder: (context, logic) => builder(context, model, logic, child),
-          init: (context, logic) {
-            if (logic is MoLogic) logic.contact(model);
-            init?.call(context, model, logic);
-          },
-          lazy: lazy,
-        );
-    if (modelValue != null) {
-      return ModelWidget.value(
-        value: modelValue!,
+    final mv = modelValue;
+    if (mv != null) {
+      return ModelWidget<T>.value(
+        value: mv,
+        builder: _logicLayer,
         child: child,
-        builder: logicWidgetBuilder,
       );
     }
     return ModelWidget<T>(
       create: modelCreate!,
+      builder: _logicLayer,
       child: child,
-      builder: logicWidgetBuilder,
     );
   }
 }
 
 /// NO Model class Widget, for simple model
+@immutable
 class NoMoWidget<T> extends StatelessWidget {
   final T value;
 
   final ModelWidgetBuilder<ValueModel<T>> builder;
 
-  NoMoWidget({
+  const NoMoWidget({
+    super.key,
     required this.value,
     required this.builder,
   });
 
   @override
   Widget build(BuildContext context) {
-    return ChangeNotifierProvider(
+    return ModelWidget<ValueModel<T>>(
       create: (_) => ValueModel<T>(value: value),
-      child: Consumer<ValueModel<T>>(
-        builder: (context, model, child) {
-          return builder(context, model, child);
-        },
-      ),
+      builder: builder,
     );
   }
 }
 
+@immutable
 class NoMo2Widget<A, B> extends StatelessWidget {
   final A value;
   final B value2;
 
   final ModelWidgetBuilder<Value2Model<A, B>> builder;
 
-  NoMo2Widget({
+  const NoMo2Widget({
+    super.key,
     required this.value,
     required this.value2,
     required this.builder,
@@ -193,20 +260,17 @@ class NoMo2Widget<A, B> extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ChangeNotifierProvider(
+    return ModelWidget<Value2Model<A, B>>(
       create: (_) => Value2Model<A, B>(
         value: value,
         value2: value2,
       ),
-      child: Consumer<Value2Model<A, B>>(
-        builder: (context, model, child) {
-          return builder(context, model, child);
-        },
-      ),
+      builder: builder,
     );
   }
 }
 
+@immutable
 class NoMo3Widget<A, B, C> extends StatelessWidget {
   final A value;
   final B value2;
@@ -214,7 +278,8 @@ class NoMo3Widget<A, B, C> extends StatelessWidget {
 
   final ModelWidgetBuilder<Value3Model<A, B, C>> builder;
 
-  NoMo3Widget({
+  const NoMo3Widget({
+    super.key,
     required this.value,
     required this.value2,
     required this.value3,
@@ -223,17 +288,13 @@ class NoMo3Widget<A, B, C> extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ChangeNotifierProvider(
+    return ModelWidget<Value3Model<A, B, C>>(
       create: (_) => Value3Model<A, B, C>(
         value: value,
         value2: value2,
         value3: value3,
       ),
-      child: Consumer<Value3Model<A, B, C>>(
-        builder: (context, model, child) {
-          return builder(context, model, child);
-        },
-      ),
+      builder: builder,
     );
   }
 }

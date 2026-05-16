@@ -1,5 +1,6 @@
 import 'package:flutter/widgets.dart';
-import 'package:provider/provider.dart';
+
+import 'provider.dart';
 
 abstract class Disposable {
   void dispose();
@@ -48,6 +49,12 @@ abstract class WidgetModel extends Model {
     _context = context;
   }
 
+  void detach(BuildContext context) {
+    if (identical(_context, context)) {
+      _context = null;
+    }
+  }
+
   @override
   void dispose() {
     _context = null;
@@ -55,9 +62,7 @@ abstract class WidgetModel extends Model {
   }
 
   @override
-  bool get disposed =>
-      _context == null ||
-      (context as Element).toStringShort().endsWith('(DEFUNCT)');
+  bool get disposed => super.disposed || _context == null;
 
   @override
   void refresh<T extends Model>([VoidCallback? fn]) {
@@ -66,9 +71,9 @@ abstract class WidgetModel extends Model {
     if (disposed) return;
 
     ///refresh higher level model
-    if (!(this is T)) {
+    if (this is! T) {
       fn?.call();
-      context.read<T>().refresh();
+      context.read<T>().refresh<T>();
     }
   }
 }

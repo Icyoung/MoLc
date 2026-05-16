@@ -15,7 +15,7 @@ void main() {
 }
 
 final topModels = [
-  ChangeNotifierProvider(create: (_) => TestEventModel()),
+  moNotifierProvider((_) => TestEventModel()),
 ];
 
 enum TestEvent { event1, event2, event3, event4 }
@@ -23,7 +23,7 @@ enum TestEvent { event1, event2, event3, event4 }
 class TestEventModel extends TopModel with EventModel<TestEvent> {}
 
 class MainPage extends StatelessWidget {
-  MainPage({Key? key}) : super(key: key);
+  MainPage({super.key});
 
   final abc = 100.mt;
 
@@ -192,7 +192,7 @@ class _MainLogic extends Logic {
 }
 
 class Part1 extends StatelessWidget {
-  const Part1({Key? key}) : super(key: key);
+  const Part1({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -224,7 +224,7 @@ class _Part1Model extends Model with ExposedMixin {
 }
 
 class Part2 extends StatelessWidget {
-  const Part2({Key? key}) : super(key: key);
+  const Part2({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -253,12 +253,13 @@ class _Part2Logic extends Logic {
 
   void request(BuildContext context) async {
     await Future.delayed(const Duration(seconds: 1));
+    if (!context.mounted) return;
     context.read<_MainModel>().refresh();
   }
 }
 
 class Part3 extends StatelessWidget {
-  const Part3({Key? key}) : super(key: key);
+  const Part3({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -287,7 +288,7 @@ class Part3 extends StatelessWidget {
 }
 
 class Part4 extends StatelessWidget {
-  const Part4({Key? key}) : super(key: key);
+  const Part4({super.key});
 
   @override
   Widget build(BuildContext context) {

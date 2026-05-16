@@ -1,5 +1,3 @@
-import 'dart:collection';
-
 import 'container.dart';
 import 'model.dart';
 import 'top.dart';
@@ -8,35 +6,56 @@ import 'top.dart';
 mixin EventModel<T> on TopModel {
   void refreshEvent(T event) {
     final listeners = top<CoreContainer>()._getModelListeners(event);
-    listeners?.forEach((_, refresh) {
+    for (final refresh in [...?listeners?.values]) {
       refresh.call();
-    });
+    }
   }
 }
 
 mixin EventContainerMixin on TopModel {
-  Map<String, Map<String, void Function()>> _eventModelMap = SplayTreeMap();
+  final Map<Object?, Map<int, void Function()>> _eventModelMap = {};
 
-  Map<String, void Function()>? _getModelListeners<T>(T event) =>
-      _eventModelMap[event.toString()];
+  Map<int, void Function()>? _getModelListeners<T>(T event) =>
+      _eventModelMap[event];
 
-  void _addModelListener<T>(Model listener, T event, void refresh()) {
-    final listeners = _eventModelMap[event.toString()] ??= SplayTreeMap();
-    listeners[listener.runtimeType.toString()] = refresh;
+  void _addModelListener<T>(
+      EventConsumerMixin listener, T event, void Function() refresh) {
+    final listeners = _eventModelMap[event] ??= {};
+    listeners[listener._id] = refresh;
   }
 
-  void _removeModelListener<T>(Model listener, T event) {
-    final listeners = _eventModelMap[event.toString()];
-    listeners?.remove(listener.runtimeType.toString());
+  void _removeModelListener<T>(EventConsumerMixin listener, T event) {
+    final listeners = _eventModelMap[event];
+    listeners?.remove(listener._id);
   }
 }
 
 mixin EventConsumerMixin on Model {
-  Set events = Set();
+  static int _nextId = 0;
+  final int _id = _nextId++;
+  final Set<Object?> _events = {};
+  final Set<Object> _eventOwners = {};
+  CoreContainer? _eventContainer;
 
-  void listenTopModelEvent<T>(T event, {void refresh()?, bool test()?}) {
-    events.add(event);
+  void attachTopModelEventOwner(Object owner) {
+    _eventOwners.add(owner);
+  }
+
+  void detachTopModelEventOwner(Object owner) {
+    _eventOwners.remove(owner);
+    if (_eventOwners.isEmpty) {
+      removeTopModelEventListeners();
+    }
+  }
+
+  void listenTopModelEvent<T>(
+    T event, {
+    void Function()? refresh,
+    bool Function()? test,
+  }) {
+    _events.add(event);
     final eventContainer = top<CoreContainer>();
+    _eventContainer = eventContainer;
     eventContainer._addModelListener(this, event, () {
       if (!disposed && (test?.call() ?? true)) (refresh ?? this.refresh)();
     });
@@ -44,10 +63,17 @@ mixin EventConsumerMixin on Model {
 
   @override
   void dispose() {
-    events.forEach((e) {
-      final eventContainer = top<CoreContainer>();
-      eventContainer._removeModelListener(this, e);
-    });
+    removeTopModelEventListeners();
     super.dispose();
+  }
+
+  void removeTopModelEventListeners() {
+    final eventContainer = _eventContainer;
+    for (final e in _events) {
+      eventContainer?._removeModelListener(this, e);
+    }
+    _events.clear();
+    _eventOwners.clear();
+    _eventContainer = null;
   }
 }

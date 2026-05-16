@@ -4,21 +4,23 @@ import 'type.dart';
 
 class InitialBuilder extends StatefulWidget {
   const InitialBuilder({
-    Key? key,
+    super.key,
     required this.builder,
     this.initial,
     this.dispose,
-  }) : super(key: key);
+    this.reassemble,
+  });
 
   final WidgetBuilder builder;
   final Init? initial;
   final VoidCallback? dispose;
+  final Init? reassemble;
 
   @override
-  _InitialBuilderState createState() => _InitialBuilderState();
+  InitialBuilderState createState() => InitialBuilderState();
 }
 
-class _InitialBuilderState extends State<InitialBuilder> {
+class InitialBuilderState extends State<InitialBuilder> {
   @override
   void initState() {
     super.initState();
@@ -32,6 +34,12 @@ class _InitialBuilderState extends State<InitialBuilder> {
     if (mounted) {
       setState(() {});
     }
+  }
+
+  @override
+  void reassemble() {
+    widget.reassemble?.call(context, refresh);
+    super.reassemble();
   }
 
   @override
