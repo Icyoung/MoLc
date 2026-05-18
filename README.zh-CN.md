@@ -12,8 +12,9 @@ MoLc 是一个轻量 Flutter 状态管理与页面架构组件。它的核心目
 MoLc 关注以下工程问题：
 
 * **Model / Logic 分离**：Widget 只负责声明 UI，状态放在 Model，业务动作放在 Logic。
-* **上下文树访问补全**：子节点访问父级对象应优先使用 `context.read<T>()` /
-  `context.watch<T>()`；`top<T>()` 用于顶层全局 Model / repo；
+* **上下文树访问补全**：子节点访问父级对象可以使用 `context.read<T>()` /
+  `context.watch<T>()`；`top<T>()` 用于直接访问顶层全局 Model / repo，也适合框架级、
+  非 widget 体系代码调用；
   `ExposedMixin` + `find<T>()` 成对用于非子节点访问父、父访问子、兄弟组件访问或活跃对象查找。
 * **逻辑复用**：Logic 可以脱离 Widget 组织业务行为，也可以按需暴露给其他组件调用。
 * **精准刷新**：Model 可以通过 `SelectorMixin` 决定是否刷新。
@@ -305,15 +306,19 @@ final appModel = context.read<AppModel>();
 final sameModel = top<AppModel>();
 ```
 
-如果当前 widget 是 provider 的子节点，优先使用 `context.read<T>()` 或
-`context.watch<T>()`。当没有合适的 widget context，或者 Logic / Model / repo 需要访问
-注册在 `TopProvider` 下的顶层全局对象时，再使用 `top<T>()`。
+`top<T>()` 面向注册在 `TopProvider` 下的顶层全局 Model / repo，也适合框架级代码、
+非 widget 体系代码、Logic / Model 方法、repo 等场景直接访问顶层对象。
+
+子节点 widget 也可以调用 `top<T>()`。相比 inherited-tree 查找，它会先跳到根
+`TopProvider` context，因此访问顶层对象时路径更短。需要 UI 订阅 rebuild 时使用
+`context.watch<T>()`；只需要非订阅读取时使用 `context.read<T>()` 或 `top<T>()`。
 
 规则：
 
 * 一个 App 同时只能挂载一个 `TopProvider`。
 * `top<T>()` 只能在 `TopProvider` 已经挂载后使用。
-* `top<T>()` 面向顶层全局 Model / repo，不用于普通子节点访问父节点。
+* `top<T>()` 面向顶层全局 Model / repo；普通局部父级 provider 仍使用
+  `context.read<T>()` / `context.watch<T>()`。
 * 测试中需要先 `pumpWidget(const SizedBox.shrink())` 卸载旧树，再挂新 `TopProvider`。
 
 ## 全局 Model 局部刷新

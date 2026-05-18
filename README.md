@@ -16,11 +16,12 @@ MoLc focuses on practical Flutter app structure:
 
 - **Model / Logic separation**: widgets declare UI, models hold UI state, and
   logic objects coordinate actions, requests, navigation, and side effects.
-- **Context-tree access where Flutter is awkward**: descendants should access
-  ancestors with `context.read<T>()` or `context.watch<T>()`. `top<T>()` is for
-  app-root global models or repositories, while `ExposedMixin` plus `find<T>()`
-  is for non-descendant access such as parent-to-child, sibling, or active
-  object lookup.
+- **Context-tree access where Flutter is awkward**: descendants can access
+  ancestors with `context.read<T>()` or `context.watch<T>()`. `top<T>()` gives
+  direct access to app-root global models or repositories, including
+  framework-level and non-widget code. `ExposedMixin` plus `find<T>()` is for
+  non-descendant access such as parent-to-child, sibling, or active object
+  lookup.
 - **Logic reuse**: logic can be organized outside widgets and exposed only when
   another component needs to call it.
 - **Selective rebuilds**: `SelectorMixin` lets a model decide whether a refresh
@@ -323,17 +324,23 @@ final appModel = context.read<AppModel>();
 final sameModel = top<AppModel>();
 ```
 
-Use `context.read<T>()` or `context.watch<T>()` when a widget is a descendant of
-the provider. Use `top<T>()` when there is no useful widget context, or when a
-logic/model/repository needs to reach an app-root `TopModel` or repo registered
-under `TopProvider`.
+Use `top<T>()` for app-root global models or repositories registered under
+`TopProvider`. It is also useful from framework-level code, non-widget code,
+logic/model methods, repositories, or other places that should directly reach a
+top-level object.
+
+Descendant widgets can also call `top<T>()`. Compared with inherited-tree lookup,
+it jumps to the root `TopProvider` context first, so it can be a shorter direct
+lookup for top-level objects. Use `context.watch<T>()` when the widget should
+subscribe to rebuilds; use `context.read<T>()` or `top<T>()` when it only needs a
+non-subscribing read.
 
 Rules:
 
 - Only one `TopProvider` can be mounted at a time.
 - `top<T>()` can be called only after a `TopProvider` is mounted.
-- `top<T>()` is for top-level global models or repositories, not ordinary
-  parent lookup from child widgets.
+- `top<T>()` is for top-level global models or repositories. For ordinary local
+  parent providers, keep using `context.read<T>()` / `context.watch<T>()`.
 - In widget tests, tear down the previous root with
   `pumpWidget(const SizedBox.shrink())` before mounting another `TopProvider`.
 

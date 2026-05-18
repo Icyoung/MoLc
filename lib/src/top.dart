@@ -9,10 +9,11 @@ import 'provider.dart';
 /// [TopModel] instances can be accessed from anywhere in the app using
 /// [top()] or [MoReadContext.read()].
 ///
-/// For normal child-to-parent access from widgets, prefer
-/// `context.read<T>()` or `context.watch<T>()`. Use [top] when there is no
-/// useful widget context, or when logic/model/repository code needs an
-/// app-root global model or repository registered under [TopProvider].
+/// Use [top] for framework-level or non-widget code, repositories, logic/model
+/// methods, or other places that need direct access to an app-root global
+/// model/repository registered under [TopProvider]. Descendant widgets can also
+/// reach the same object with [top], but use `context.watch<T>()` when the UI
+/// should subscribe to rebuilds.
 ///
 /// Mix in [EventModel] to support event-driven local refresh:
 ///
@@ -26,16 +27,16 @@ class TopModel extends Model {
 
 /// Retrieve a [TopModel] from the app root.
 ///
-/// This is a convenience function that works from any [BuildContext]-free
-/// context (e.g. inside [Logic], [Model] methods, repositories, or utility
-/// functions).
+/// This is a direct app-root lookup that works from framework-level code,
+/// non-widget code, repositories, [Logic], [Model] methods, utility functions,
+/// and widgets that want a non-subscribing shortcut to a top-level object.
 ///
 ///     final appModel = top<AppModel>();
 ///
-/// To read within a widget, prefer [MoReadContext.read()] or
-/// [MoWatchContext.watch()] for type-safe context-based access.
-/// [top] is for app-root global models/repositories, not ordinary ancestor
-/// lookup from descendant widgets.
+/// In descendant widgets, [top] can be more direct than inherited-tree lookup
+/// because it jumps to the root [TopProvider] context first. Use
+/// [MoWatchContext.watch()] instead when the widget should rebuild after the
+/// model notifies listeners.
 ///
 /// Throws if no [TopProvider] is mounted. Check [TopModel.isReady] first.
 T top<T extends TopModel>() {
