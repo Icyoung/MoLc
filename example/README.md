@@ -1,16 +1,18 @@
-# example
+# MoLc Example
 
-A new Flutter project.
+This Flutter app demonstrates the main MoLc APIs in one small screen:
 
-## Getting Started
+- `TopProvider` and `TopModel` for app-level state.
+- `MoLcWidget` for pairing a page model with page logic.
+- `ModelWidget` and `LogicWidget` for model-only and logic-only sections.
+- `EventModel` and `EventConsumerMixin` for event-scoped refresh.
+- `ExposedMixin` and `find<T>()` for looking up active objects.
+- `Mutable<T>` and `MutableWidget` for local reactive values.
+- `NoMoWidget` for simple temporary value state.
 
-This project is a starting point for a Flutter application.
+Run it from the repository root with:
 
-A few resources to get you started if this is your first Flutter project:
-
-- [Lab: Write your first Flutter app](https://flutter.dev/docs/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://flutter.dev/docs/cookbook)
-
-For help getting started with Flutter, view our
-[online documentation](https://flutter.dev/docs), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+```bash
+cd example
+flutter run
+```

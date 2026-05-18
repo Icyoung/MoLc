@@ -1,0 +1,19 @@
+# Local agent/project coordination files.
+AGENTS.md
+CLAUDE.md
+.ufoo/
+.agents/
+.codex/
+
+# Local IDE and generated files.
+.idea/
+.dart_tool/
+.pub/
+.pub-cache/
+build/
+doc/api/
+*.iml
+.DS_Store
+
+# Example lockfiles are useful locally but not needed in the package archive.
+example/pubspec.lock

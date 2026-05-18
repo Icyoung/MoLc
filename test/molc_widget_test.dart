@@ -75,6 +75,41 @@ void main() {
     expect(find.text('counter=3'), findsOneWidget);
   });
 
+  testWidgets('MoLcWidget.value recontacts MoLogic when modelValue changes',
+      (tester) async {
+    final firstModel = _FakeModel()..counter = 1;
+    final secondModel = _FakeModel()..counter = 2;
+    late _FakeLogic logic;
+
+    Widget tree(_FakeModel model) {
+      return Directionality(
+        textDirection: TextDirection.ltr,
+        child: MoLcWidget<_FakeModel, _FakeLogic>.value(
+          modelValue: model,
+          logicCreate: (_) => logic = _FakeLogic(),
+          init: (_, m, l) => l.initCalls++,
+          builder: (_, m, l, __) {
+            return Text(
+              'counter=${m.counter}; bound=${identical(l.model, m)}',
+            );
+          },
+        ),
+      );
+    }
+
+    await tester.pumpWidget(tree(firstModel));
+
+    expect(find.text('counter=1; bound=true'), findsOneWidget);
+    expect(identical(logic.model, firstModel), isTrue);
+    expect(logic.initCalls, 1);
+
+    await tester.pumpWidget(tree(secondModel));
+
+    expect(find.text('counter=2; bound=true'), findsOneWidget);
+    expect(identical(logic.model, secondModel), isTrue);
+    expect(logic.initCalls, 1);
+  });
+
   testWidgets('WidgetModel still refreshes after deactivate/reactivate cycle',
       (tester) async {
     final pageKey = GlobalKey();

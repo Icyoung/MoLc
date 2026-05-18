@@ -59,6 +59,16 @@ void main() {
     await tester.pumpWidget(const SizedBox.shrink());
   });
 
+  testWidgets('top throws a FlutterError before TopProvider is mounted',
+      (tester) async {
+    await tester.pumpWidget(const SizedBox.shrink());
+
+    expect(
+      () => top<_TopEventModel>(),
+      throwsA(isA<FlutterError>()),
+    );
+  });
+
   testWidgets('TopProvider exposes top models through top() and context.read',
       (tester) async {
     late _TopEventModel topModel;

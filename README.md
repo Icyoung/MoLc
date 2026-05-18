@@ -436,6 +436,11 @@ MutableWidget(
 读取 `count.value` 时，当前 `MutableWidget` 会被注册为依赖者。
 写入 `count.value` 时，所有依赖它的 `MutableWidget` 会刷新。
 
+设计备注：`Mutable` 内部的静态 build-phase delegate 是刻意设计，不是残留的全局状态。
+它利用 Flutter widget build 在单 isolate 上同步执行的模型，在读取 `value` 时自动捕获当前
+`MutableWidget` 并建立订阅，从而实现接近 GetX 的自动依赖追踪。除非要改变这套自动追踪语义，
+否则不应把它改成显式订阅 API。
+
 规则：
 
 * `Mutable.value` 应该在 `MutableWidget` 的 builder 同步读取。

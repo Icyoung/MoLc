@@ -4,10 +4,32 @@ import 'container.dart';
 import 'model.dart';
 import 'provider.dart';
 
+/// A [Model] registered at the app root via [TopProvider].
+///
+/// [TopModel] instances can be accessed from anywhere in the app using
+/// [top()] or [MoReadContext.read()].
+///
+/// Mix in [EventModel] to support event-driven local refresh:
+///
+///     class AppModel extends TopModel with EventModel<AppEvent> {}
+///
+/// Check [isReady] to verify a [TopProvider] is mounted before calling [top()].
 class TopModel extends Model {
+  /// Whether a [TopProvider] is currently mounted in the widget tree.
   static bool get isReady => _TopProviderState._currentContext != null;
 }
 
+/// Retrieve a [TopModel] from the app root.
+///
+/// This is a convenience function that works from any [BuildContext]-free
+/// context (e.g. inside [Logic], [Model] methods, or utility functions).
+///
+///     final appModel = top<AppModel>();
+///
+/// To read within a widget, prefer [MoReadContext.read()] or
+/// [MoWatchContext.watch()] for type-safe context-based access.
+///
+/// Throws if no [TopProvider] is mounted. Check [TopModel.isReady] first.
 T top<T extends TopModel>() {
   final ctx = _TopProviderState._currentContext;
   if (ctx == null) {
@@ -22,9 +44,33 @@ T top<T extends TopModel>() {
   return ctx.read<T>();
 }
 
-@visibleForTesting
+/// Debug access to the internal [GlobalKey] of the current [TopProvider].
+///
+/// @visibleForTesting
 GlobalKey? get debugTopKey => _TopProviderState._current?._topKey;
 
+/// The root provider that holds app-level [TopModel] instances.
+///
+/// [TopProvider] wraps your app and provides:
+/// - A [CoreContainer] for [ExposedMixin] and [EventModel] infrastructure.
+/// - Any additional providers specified in [providers].
+///
+/// Only one [TopProvider] can be mounted at a time. Mounting a second one
+/// will throw.
+///
+///     void main() {
+///       runApp(
+///         TopProvider(
+///           providers: [
+///             moNotifierProvider<AppModel>((_) => AppModel()),
+///           ],
+///           child: const MaterialApp(home: HomePage()),
+///         ),
+///       );
+///     }
+///
+/// In widget tests, tear down the previous tree with
+/// `pumpWidget(const SizedBox.shrink())` before mounting a new [TopProvider].
 class TopProvider extends StatefulWidget {
   final Widget child;
   final List<MoProviderBuilder>? providers;

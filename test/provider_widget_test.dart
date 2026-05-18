@@ -130,4 +130,38 @@ void main() {
 
     expect(find.text('nearest=2'), findsOneWidget);
   });
+
+  testWidgets('context.read throws a FlutterError when provider is missing',
+      (tester) async {
+    await tester.pumpWidget(
+      Builder(
+        builder: (context) {
+          context.read<_PlainValue>();
+          return const SizedBox.shrink();
+        },
+      ),
+    );
+
+    final error = tester.takeException();
+    expect(error, isA<FlutterError>());
+    expect(
+        error.toString(), contains('No MoLc provider found for _PlainValue'));
+  });
+
+  testWidgets('context.watch throws a FlutterError when provider is missing',
+      (tester) async {
+    await tester.pumpWidget(
+      Builder(
+        builder: (context) {
+          context.watch<_PlainValue>();
+          return const SizedBox.shrink();
+        },
+      ),
+    );
+
+    final error = tester.takeException();
+    expect(error, isA<FlutterError>());
+    expect(
+        error.toString(), contains('No MoLc provider found for _PlainValue'));
+  });
 }

@@ -2,6 +2,12 @@ name: molc
 description: A Flutter state management package separating UI state Models from business Logic.
 version: 0.2.0
 homepage: https://github.com/Icyoung/MoLc
+repository: https://github.com/Icyoung/MoLc
+issue_tracker: https://github.com/Icyoung/MoLc/issues
+topics:
+  - flutter
+  - state-management
+  - inherited-widget
 
 environment:
   sdk: '>=3.0.0 <4.0.0'

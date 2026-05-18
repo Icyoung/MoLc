@@ -2,6 +2,14 @@ import 'package:flutter/widgets.dart';
 
 import 'type.dart';
 
+/// A widget that provides lifecycle hooks (init, reassemble, dispose)
+/// alongside a regular builder.
+///
+/// Used internally by [LogicWidget] to wire up [Logic] lifecycle methods.
+///
+/// - [initial] is called once during the widget's initialization phase.
+/// - [reassemble] is called after hot reload.
+/// - [dispose] is called during the widget's disposal phase.
 class InitialBuilder extends StatefulWidget {
   const InitialBuilder({
     super.key,
@@ -20,6 +28,7 @@ class InitialBuilder extends StatefulWidget {
   InitialBuilderState createState() => InitialBuilderState();
 }
 
+/// State for [InitialBuilder].
 class InitialBuilderState extends State<InitialBuilder> {
   @override
   void initState() {
@@ -30,6 +39,7 @@ class InitialBuilderState extends State<InitialBuilder> {
   @override
   Widget build(BuildContext context) => widget.builder(context);
 
+  /// Trigger a rebuild of the builder.
   void refresh() {
     if (mounted) {
       setState(() {});

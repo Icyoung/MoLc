@@ -9,6 +9,12 @@
 .history
 .svn/
 
+# ufoo local runtime/state
+.ufoo/agent/
+.ufoo/bus/
+.ufoo/run/
+.ufoo/context/decisions.jsonl
+
 # IntelliJ related
 *.iml
 *.ipr
