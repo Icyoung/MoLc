@@ -10,10 +10,11 @@ import 'provider.dart';
 /// [top()] or [MoReadContext.read()].
 ///
 /// Use [top] for framework-level or non-widget code, repositories, logic/model
-/// methods, or other places that need direct access to an app-root global
-/// model/repository registered under [TopProvider]. Descendant widgets can also
-/// reach the same object with [top], but use `context.watch<T>()` when the UI
-/// should subscribe to rebuilds.
+/// methods, external singletons/services, or other places that need direct
+/// access to an app-root global model/repository registered under
+/// [TopProvider]. The caller itself does not need to be managed by MoLc.
+/// Descendant widgets can also reach the same object with [top], but use
+/// `context.watch<T>()` when the UI should subscribe to rebuilds.
 ///
 /// Mix in [EventModel] to support event-driven local refresh:
 ///
@@ -28,15 +29,23 @@ class TopModel extends Model {
 /// Retrieve a [TopModel] from the app root.
 ///
 /// This is a direct app-root lookup that works from framework-level code,
-/// non-widget code, repositories, [Logic], [Model] methods, utility functions,
-/// and widgets that want a non-subscribing shortcut to a top-level object.
+/// non-widget code, repositories, external singletons/services, [Logic],
+/// [Model] methods, utility functions, and widgets that want a non-subscribing
+/// shortcut to a top-level object.
 ///
 ///     final appModel = top<AppModel>();
+///
+/// For example, an HTTP singleton can read an app-level config model:
+///
+///     final baseUrl = top<AppConfigModel>().baseUrl;
 ///
 /// In descendant widgets, [top] can be more direct than inherited-tree lookup
 /// because it jumps to the root [TopProvider] context first. Use
 /// [MoWatchContext.watch()] instead when the widget should rebuild after the
 /// model notifies listeners.
+///
+/// Do not call [top] during static initialization, before `runApp`, or before
+/// the [TopProvider] instance has mounted. If needed, check [TopModel.isReady].
 ///
 /// Throws if no [TopProvider] is mounted. Check [TopModel.isReady] first.
 T top<T extends TopModel>() {

@@ -307,7 +307,19 @@ final sameModel = top<AppModel>();
 ```
 
 `top<T>()` 面向注册在 `TopProvider` 下的顶层全局 Model / repo，也适合框架级代码、
-非 widget 体系代码、Logic / Model 方法、repo 等场景直接访问顶层对象。
+非 widget 体系代码、Logic / Model 方法、repo、外部单例 / service 等场景直接访问顶层对象。
+调用方本身不需要被 MoLc 管理。
+
+例如，HTTP 单例可以从顶层 AppConfigModel 读取 `baseUrl`：
+
+```dart
+class HttpClient {
+  Uri buildUri(String path) {
+    final config = top<AppConfigModel>();
+    return Uri.parse('${config.baseUrl}$path');
+  }
+}
+```
 
 子节点 widget 也可以调用 `top<T>()`。相比 inherited-tree 查找，它会先跳到根
 `TopProvider` context，因此访问顶层对象时路径更短。需要 UI 订阅 rebuild 时使用
@@ -317,6 +329,8 @@ final sameModel = top<AppModel>();
 
 * 一个 App 同时只能挂载一个 `TopProvider`。
 * `top<T>()` 只能在 `TopProvider` 已经挂载后使用。
+* 不要在静态初始化、`runApp` 之前、或 `TopProvider` 实例尚未挂载时调用
+  `top<T>()`。非 widget 调用方如需保护访问时机，可以先检查 `TopModel.isReady`。
 * `top<T>()` 面向顶层全局 Model / repo；普通局部父级 provider 仍使用
   `context.read<T>()` / `context.watch<T>()`。
 * 测试中需要先 `pumpWidget(const SizedBox.shrink())` 卸载旧树，再挂新 `TopProvider`。

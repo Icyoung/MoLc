@@ -326,8 +326,21 @@ final sameModel = top<AppModel>();
 
 Use `top<T>()` for app-root global models or repositories registered under
 `TopProvider`. It is also useful from framework-level code, non-widget code,
-logic/model methods, repositories, or other places that should directly reach a
-top-level object.
+logic/model methods, repositories, external singletons/services, or other places
+that should directly reach a top-level object. The caller itself does not need
+to be managed by MoLc.
+
+For example, an HTTP singleton can read `baseUrl` from an app-level config
+model:
+
+```dart
+class HttpClient {
+  Uri buildUri(String path) {
+    final config = top<AppConfigModel>();
+    return Uri.parse('${config.baseUrl}$path');
+  }
+}
+```
 
 Descendant widgets can also call `top<T>()`. Compared with inherited-tree lookup,
 it jumps to the root `TopProvider` context first, so it can be a shorter direct
@@ -339,6 +352,9 @@ Rules:
 
 - Only one `TopProvider` can be mounted at a time.
 - `top<T>()` can be called only after a `TopProvider` is mounted.
+- Do not call `top<T>()` during static initialization, before `runApp`, or
+  before the `TopProvider` instance has mounted. Use `TopModel.isReady` if a
+  non-widget caller needs to guard access.
 - `top<T>()` is for top-level global models or repositories. For ordinary local
   parent providers, keep using `context.read<T>()` / `context.watch<T>()`.
 - In widget tests, tear down the previous root with

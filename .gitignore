@@ -10,10 +10,7 @@
 .svn/
 
 # ufoo local runtime/state
-.ufoo/agent/
-.ufoo/bus/
-.ufoo/run/
-.ufoo/context/decisions.jsonl
+.ufoo/
 
 # IntelliJ related
 *.iml
