@@ -4,6 +4,7 @@ CLAUDE.md
 .ufoo/
 .agents/
 .codex/
+.github/
 
 # Local IDE and generated files.
 .idea/

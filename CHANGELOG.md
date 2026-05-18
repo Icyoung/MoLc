@@ -1,5 +1,13 @@
 # Changelog
 
+## Unreleased
+
+### Docs / tooling
+- Make English the default README and move the Chinese documentation to
+  `README.zh-CN.md`, linked from the English README.
+- Add GitHub Actions CI for dependency resolution, analysis, tests, and package
+  dry-run validation.
+
 ## 0.2.1
 
 ### Fixes

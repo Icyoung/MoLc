@@ -1,25 +1,34 @@
 # MoLc
 
-MoLc 是一个轻量 Flutter 状态管理与页面架构组件。它的核心目标不是替代某个
-状态管理库的 API，而是把 Flutter 页面里的 **UI 状态 Model** 和 **业务逻辑 Logic**
-拆开，并补齐真实工程中常见的跨组件通信、全局状态局部刷新、细粒度刷新等能力。
+[简体中文](README.zh-CN.md)
 
-当前版本基于 Flutter 原生的 `InheritedWidget` / `InheritedNotifier` 实现，
-不依赖 `provider`。
+MoLc is a lightweight Flutter state management and page-architecture package.
+It separates **UI state Models** from **business Logic**, while filling common
+engineering gaps such as cross-widget communication, app-level partial refresh,
+fine-grained rebuild control, and local reactive values.
 
-## 设计目标
+MoLc is implemented with Flutter's native `InheritedWidget` and
+`InheritedNotifier` primitives. It does not depend on `provider`.
 
-MoLc 关注以下工程问题：
+## Goals
 
-* **Model / Logic 分离**：Widget 只负责声明 UI，状态放在 Model，业务动作放在 Logic。
-* **上下文树访问补全**：支持子 context 访问父级对象，也支持通过 `top<T>()` 和
-  `find<T>()` 做跨页面、父访问子、兄弟组件访问。
-* **逻辑复用**：Logic 可以脱离 Widget 组织业务行为，也可以按需暴露给其他组件调用。
-* **精准刷新**：Model 可以通过 `SelectorMixin` 决定是否刷新。
-* **全局状态局部刷新**：TopModel 可以按事件刷新指定消费者，避免全局 Model 更新导致整棵 App rebuild。
-* **颗粒刷新**：`Mutable<T>` 可以实现接近 GetX / mutableStateOf 的局部响应式刷新。
+MoLc focuses on practical Flutter app structure:
 
-## 安装
+- **Model / Logic separation**: widgets declare UI, models hold UI state, and
+  logic objects coordinate actions, requests, navigation, and side effects.
+- **Context-tree access where Flutter is awkward**: descendants can access
+  ancestors with `context.read<T>()`, while `top<T>()` and `find<T>()` cover
+  app-level, parent-to-child, and sibling access patterns.
+- **Logic reuse**: logic can be organized outside widgets and exposed only when
+  another component needs to call it.
+- **Selective rebuilds**: `SelectorMixin` lets a model decide whether a refresh
+  should notify listeners.
+- **App-level partial refresh**: `TopModel` can notify only consumers of a
+  specific event instead of rebuilding every global-state consumer.
+- **Local reactive values**: `Mutable<T>` provides GetX-like or
+  `mutableStateOf`-like local reactive rebuilds.
+
+## Installation
 
 ```yaml
 dependencies:
@@ -30,7 +39,7 @@ dependencies:
 import 'package:molc/molc.dart';
 ```
 
-## 快速开始
+## Quick Start
 
 ```dart
 class CounterPage extends StatelessWidget {
@@ -72,13 +81,14 @@ class _CounterLogic extends MoLogic<_CounterModel> {
 }
 ```
 
-`refresh()` 会触发 Model 的 `notifyListeners()`，刷新依赖当前 Model 的 UI。
+`refresh()` calls `notifyListeners()` on the model, which rebuilds widgets that
+depend on that model.
 
-## 核心概念
+## Core Concepts
 
 ### Model
 
-`Model` 用来保存 Widget 状态。
+`Model` stores widget state.
 
 ```dart
 class PageModel extends Model {
@@ -87,7 +97,7 @@ class PageModel extends Model {
 }
 ```
 
-更新状态后调用：
+Update state and notify listeners with:
 
 ```dart
 model.refresh(() {
@@ -95,7 +105,7 @@ model.refresh(() {
 });
 ```
 
-如果 Model 需要访问当前 widget 的 `BuildContext`，使用 `WidgetModel`：
+If a model needs the current widget `BuildContext`, extend `WidgetModel`:
 
 ```dart
 class PageModel extends WidgetModel {
@@ -103,12 +113,13 @@ class PageModel extends WidgetModel {
 }
 ```
 
-`WidgetModel.context` 只在 Model 挂载到 `ModelWidget` / `MoLcWidget` 时有效。
-当 widget 从树上移除时，MoLc 会 detach 这个 context。
+`WidgetModel.context` is valid only while the model is attached to a
+`ModelWidget` or `MoLcWidget`. MoLc detaches the context when the widget leaves
+the tree.
 
 ### Logic
 
-`Logic` 用来放请求、跳转、事件处理、业务协调等行为。
+`Logic` stores requests, navigation, event handling, and business coordination.
 
 ```dart
 class RequestLogic extends Logic {
@@ -119,7 +130,7 @@ class RequestLogic extends Logic {
 }
 ```
 
-如果 Logic 需要 context，使用 `WidgetLogic`：
+If logic needs `BuildContext`, extend `WidgetLogic`:
 
 ```dart
 class NavigatorLogic extends WidgetLogic {
@@ -129,7 +140,7 @@ class NavigatorLogic extends WidgetLogic {
 }
 ```
 
-如果 Logic 与某个 Model 强绑定，使用 `MoLogic<T>`：
+If logic is tightly paired with one model type, extend `MoLogic<T>`:
 
 ```dart
 class BoundPageLogic extends MoLogic<PageModel> {
@@ -143,14 +154,15 @@ class BoundPageLogic extends MoLogic<PageModel> {
 }
 ```
 
-`MoLogic<T>` 适合页面级或组件级强关联逻辑。可复用 Logic 建议通过方法参数传入 Model，
-避免业务逻辑过度依赖某个具体 UI 状态结构。
+`MoLogic<T>` fits page-level or component-level logic. For reusable logic,
+prefer passing models as method arguments instead of coupling the logic to one
+specific UI state shape.
 
-## 组件
+## Widgets
 
 ### ModelWidget
 
-只有 Model 时使用：
+Use `ModelWidget` when a subtree only needs a model:
 
 ```dart
 ModelWidget<PageModel>(
@@ -161,7 +173,7 @@ ModelWidget<PageModel>(
 );
 ```
 
-外部持有 Model 时使用 `.value`：
+Use `.value` when the model is owned externally:
 
 ```dart
 final model = PageModel();
@@ -172,16 +184,16 @@ ModelWidget<PageModel>.value(
 );
 ```
 
-生命周期规则：
+Lifecycle rules:
 
-* `ModelWidget(create:)` 创建并负责 dispose Model。
-* `ModelWidget.value` 不负责 dispose 外部 Model。
-* 即使是 `.value`，MoLc 也会在 widget 卸载时 detach `WidgetModel.context`，
-  并移除 `ExposedMixin` 的活跃注册。
+- `ModelWidget(create:)` creates and disposes the model.
+- `ModelWidget.value` does not dispose the external model.
+- Both constructors detach `WidgetModel.context` and remove active
+  `ExposedMixin` registrations when unmounted.
 
 ### LogicWidget
 
-只有 Logic 时使用：
+Use `LogicWidget` when a subtree only needs logic:
 
 ```dart
 class SubmitLogic extends Logic {
@@ -202,11 +214,11 @@ LogicWidget<SubmitLogic>(
 );
 ```
 
-`LogicWidget` 会创建 Logic，并在 widget 卸载时调用 `logic.dispose()`。
+`LogicWidget` creates the logic object and calls `logic.dispose()` on unmount.
 
 ### MoLcWidget
 
-同时需要 Model 和 Logic 时使用，这是最常用的组件。
+Use `MoLcWidget` when a subtree needs both model and logic:
 
 ```dart
 MoLcWidget<PageModel, BoundPageLogic>(
@@ -219,20 +231,22 @@ MoLcWidget<PageModel, BoundPageLogic>(
 );
 ```
 
-## 原生 Provider 层
+If the logic extends `MoLogic<T>`, MoLc automatically connects it to the current
+model. `MoLcWidget.value` also reconnects `MoLogic` when `modelValue` is
+replaced with another model instance.
 
-MoLc 提供了一层极薄的原生注入能力：
+## Native Provider Layer
 
-* `MoNotifierProvider<T extends ChangeNotifier>`
-* `MoProvider<T>`
-* `MoMultiProvider`
-* `context.read<T>()`
-* `context.watch<T>()`
+MoLc provides a small native dependency-injection layer:
 
-`read<T>()` 只读取对象，不订阅刷新。
+- `MoNotifierProvider<T extends ChangeNotifier>`
+- `MoProvider<T>`
+- `MoMultiProvider`
+- `context.read<T>()`
+- `context.watch<T>()`
 
-`watch<T>()` 会建立 inherited 依赖。当对应 `MoNotifierProvider` 的 notifier
-触发通知时，使用 `watch<T>()` 的 widget 会 rebuild。
+`read<T>()` reads a value without subscribing. `watch<T>()` creates an inherited
+dependency and rebuilds when the matching `MoNotifierProvider` notifies.
 
 ```dart
 MoNotifierProvider<PageModel>(
@@ -246,7 +260,7 @@ MoNotifierProvider<PageModel>(
 );
 ```
 
-普通对象使用 `MoProvider`：
+Use `MoProvider` for plain objects:
 
 ```dart
 MoProvider<ApiClient>(
@@ -256,7 +270,7 @@ MoProvider<ApiClient>(
 );
 ```
 
-`MoMultiProvider` 中 provider 的顺序是从外到内：
+Providers in `MoMultiProvider` are applied from outer to inner:
 
 ```dart
 MoMultiProvider(
@@ -270,15 +284,18 @@ MoMultiProvider(
 );
 ```
 
-靠前的 provider 在树的外层，靠后的 provider 可以在 `create` 中读取靠前的对象。
+Earlier providers are outside later providers, so later `create` callbacks can
+read earlier values.
 
-不要在 `dispose` 阶段通过 `context.read<T>()` 查找祖先。Flutter 会认为 deactivated
-context 的祖先查找是不安全的。需要清理依赖时，应在对象创建、初始化或 attach 阶段先缓存。
+Do not call `context.read<T>()` during `dispose` to look up ancestors. Flutter
+does not allow ancestor lookup from a deactivated context. Cache cleanup
+dependencies during creation, initialization, or attach instead.
 
-## TopProvider 与 TopModel
+## TopProvider and TopModel
 
-Flutter 的 inherited 机制天然适合父节点向子节点传值。App 级状态通常需要放在
-`MaterialApp` 之上，MoLc 用 `TopProvider` 统一承载这些顶级对象，并维护内部容器。
+Flutter's inherited mechanism naturally passes data from parents to children.
+App-level state usually belongs above `MaterialApp`. `TopProvider` holds those
+top-level objects and MoLc's internal container.
 
 ```dart
 void main() {
@@ -297,23 +314,24 @@ void main() {
 class AppModel extends TopModel {}
 ```
 
-读取 TopModel：
+Read top models with either context or the context-free `top<T>()` helper:
 
 ```dart
 final appModel = context.read<AppModel>();
 final sameModel = top<AppModel>();
 ```
 
-规则：
+Rules:
 
-* 一个 App 同时只能挂载一个 `TopProvider`。
-* `top<T>()` 只能在 `TopProvider` 已经挂载后使用。
-* 测试中需要先 `pumpWidget(const SizedBox.shrink())` 卸载旧树，再挂新 `TopProvider`。
+- Only one `TopProvider` can be mounted at a time.
+- `top<T>()` can be called only after a `TopProvider` is mounted.
+- In widget tests, tear down the previous root with
+  `pumpWidget(const SizedBox.shrink())` before mounting another `TopProvider`.
 
-## 全局 Model 局部刷新
+## App-Level Partial Refresh
 
-全局 Model 更新时，如果直接刷新整个 TopModel，容易导致大范围 rebuild。
-MoLc 用 `EventModel<T>` 和 `EventConsumerMixin` 做事件级局部刷新。
+Refreshing a full app-level model can rebuild too much UI. MoLc uses
+`EventModel<T>` and `EventConsumerMixin` for event-scoped refresh.
 
 ```dart
 enum AppEvent { userChanged, themeChanged }
@@ -327,15 +345,15 @@ class ProfileModel extends Model with EventConsumerMixin {
 }
 ```
 
-触发事件：
+Trigger an event:
 
 ```dart
 top<AppModel>().refreshEvent(AppEvent.userChanged);
 ```
 
-只监听 `AppEvent.userChanged` 的 Model 会刷新。
+Only models listening to `AppEvent.userChanged` refresh.
 
-也可以提供自定义刷新函数和判断条件：
+You can provide a custom refresh callback and condition:
 
 ```dart
 listenTopModelEvent(
@@ -348,14 +366,14 @@ listenTopModelEvent(
 );
 ```
 
-事件 key 使用事件对象本身的 `==` / `hashCode`，不是 `toString()`。
-推荐使用 enum 或稳定的 value object。
+Event keys use the event object's `==` and `hashCode`, not `toString()`.
+Prefer enums or stable value objects.
 
 ## ExposedMixin
 
-`InheritedWidget` 只能自然支持子 context 访问父 context。业务中有时需要父组件访问子组件、
-兄弟组件互相访问，或者在非 Widget 层调用当前活跃的 Logic。`ExposedMixin` 用来把当前
-活跃对象注册到 MoLc 容器中。
+`InheritedWidget` is best for child-to-parent access. Some apps also need
+parent-to-child access, sibling access, or non-widget layers calling active
+logic. `ExposedMixin` registers an active object in MoLc's container.
 
 ```dart
 class DetailModel extends Model with ExposedMixin {
@@ -363,13 +381,13 @@ class DetailModel extends Model with ExposedMixin {
 }
 ```
 
-查找当前活跃实例：
+Find the current active instance:
 
 ```dart
 find<DetailModel>()?.reload();
 ```
 
-Logic 也可以暴露：
+Logic can be exposed too:
 
 ```dart
 class DetailLogic extends Logic with ExposedMixin {
@@ -379,16 +397,20 @@ class DetailLogic extends Logic with ExposedMixin {
 find<DetailLogic>()?.scrollToTop();
 ```
 
-规则：
+Rules:
 
-* `find<T>()` 返回当前活跃的最后一个 `T` 实例。
-* 对象从 `ModelWidget` / `LogicWidget` 卸载时会自动移除注册。
-* `.value` 外部对象不会被 dispose，但也会在 widget 卸载时从活跃注册中移除。
-* `findFuzzy(String)` 仍可用于字符串查找，但新代码推荐使用 `find<T>()`。
+- `find<T>()` returns the last active registered instance of type `T`.
+- Objects are removed from the active registry when their `ModelWidget` or
+  `LogicWidget` unmounts.
+- External `.value` objects are not disposed, but they are removed from the
+  active registry on unmount.
+- `findFuzzy(String)` remains available for string-based lookup, but new code
+  should prefer the type-safe `find<T>()`.
 
 ## SelectorMixin
 
-`SelectorMixin<T>` 用于 Model 内部的精细化刷新判断。
+`SelectorMixin<T>` lets a model decide whether a refresh should notify
+listeners.
 
 ```dart
 class PageModel extends Model with SelectorMixin<(int, String)> {
@@ -403,15 +425,17 @@ class PageModel extends Model with SelectorMixin<(int, String)> {
 }
 ```
 
-`refresh()` 时，MoLc 会比较 `selectWith()` 的返回值。如果返回值没有变化，
-Model 不会通知 UI 刷新。
+When `refresh()` runs, MoLc compares the current `selectWith()` value with the
+previous one. If the value did not change, the model does not notify UI
+listeners.
 
-注意：`selectWith()` 返回值需要有可靠的 `==` 语义。可以使用 record、tuple、
-不可变 value object 等。
+The selected value must have reliable `==` semantics. Dart records, tuples, and
+immutable value objects are good choices.
 
 ## Mutable
 
-`Mutable<T>` 适合非常局部的响应式状态，例如列表项、计数器、局部开关。
+`Mutable<T>` is useful for very local reactive state such as list items,
+counters, and local switches.
 
 ```dart
 final count = 0.mt;
@@ -433,25 +457,29 @@ MutableWidget(
 );
 ```
 
-读取 `count.value` 时，当前 `MutableWidget` 会被注册为依赖者。
-写入 `count.value` 时，所有依赖它的 `MutableWidget` 会刷新。
+Reading `count.value` registers the current `MutableWidget` as a subscriber.
+Writing `count.value` refreshes every `MutableWidget` that depends on it.
 
-设计备注：`Mutable` 内部的静态 build-phase delegate 是刻意设计，不是残留的全局状态。
-它利用 Flutter widget build 在单 isolate 上同步执行的模型，在读取 `value` 时自动捕获当前
-`MutableWidget` 并建立订阅，从而实现接近 GetX 的自动依赖追踪。除非要改变这套自动追踪语义，
-否则不应把它改成显式订阅 API。
+Design note: the static build-phase delegate inside `Mutable` is intentional.
+It relies on Flutter widget builds running synchronously on one isolate. When a
+builder reads `value`, `Mutable` captures the currently building
+`MutableWidget` and creates an automatic subscription, giving MoLc GetX-like
+dependency tracking. Do not replace it with an explicit subscription API unless
+the automatic tracking model is changing.
 
-规则：
+Rules:
 
-* `Mutable.value` 应该在 `MutableWidget` 的 builder 同步读取。
-* 可以在事件回调、异步回调中写入 `Mutable.value`。
-* 不要在没有 `MutableWidget` 上下文的地方读取 `Mutable.value` 或隐式调用
-  `toString()`，否则没有可绑定的刷新目标。
-* `MutableWidget` 支持嵌套，也支持多个 widget 监听同一个 `Mutable` 值。
+- Read `Mutable.value` synchronously inside a `MutableWidget` builder.
+- Write `Mutable.value` from event callbacks, async callbacks, or other normal
+  application code.
+- Do not read `Mutable.value` or implicitly call `toString()` without a
+  `MutableWidget` context, because there is no widget to bind the refresh to.
+- `MutableWidget` supports nesting and multiple widgets subscribing to the same
+  `Mutable`.
 
-## 简单值组件
+## Simple Value Widgets
 
-如果只是需要一个临时 Model，可以使用 `NoMoWidget`：
+Use `NoMoWidget` when you only need a temporary model:
 
 ```dart
 NoMoWidget<int>(
@@ -469,33 +497,37 @@ NoMoWidget<int>(
 );
 ```
 
-也提供 `NoMo2Widget` 和 `NoMo3Widget`，分别对应 `Value2Model` 和 `Value3Model`。
+`NoMo2Widget` and `NoMo3Widget` provide the matching wrappers for
+`Value2Model` and `Value3Model`.
 
-## 推荐组织方式
+## Recommended Structure
 
-页面级代码建议按这个思路拆分：
+For page-level code, prefer a structure like this:
 
 ```text
 page/
-  user_page.dart      // Widget 和 MoLcWidget 装配
-  user_model.dart     // UI 状态
-  user_logic.dart     // 请求、跳转、业务动作
+  user_page.dart      // Widget and MoLcWidget wiring
+  user_model.dart     // UI state
+  user_logic.dart     // requests, navigation, business actions
 ```
 
-建议：
+Recommendations:
 
-* 页面内部状态优先放在页面 Model。
-* 请求、跳转、复杂业务流程放在 Logic。
-* 跨页面共享状态放在 TopModel。
-* 父访问子、兄弟访问、临时跨层调用才使用 ExposedMixin。
-* 高频局部小状态可以使用 Mutable。
-* 不要把所有状态都放进 TopModel，也不要把 `find<T>()` 当作默认数据流。
+- Keep page-local UI state in the page model.
+- Put requests, navigation, and complex workflows in logic.
+- Put cross-page shared state in `TopModel`.
+- Use `ExposedMixin` only for parent-to-child, sibling, or temporary
+  cross-layer calls.
+- Use `Mutable` for small high-frequency local state.
+- Do not put all state into `TopModel`.
+- Do not treat `find<T>()` as the default data flow.
 
-## 从 provider 迁移
+## Migrating from provider
 
-MoLc 0.2.0 起不再依赖 `provider`，也不再从 `molc.dart` 导出 provider API。
+MoLc 0.2.0 and later no longer depend on `provider`, and `molc.dart` no longer
+exports provider APIs.
 
-旧写法：
+Old code:
 
 ```dart
 ChangeNotifierProvider(
@@ -504,7 +536,7 @@ ChangeNotifierProvider(
 );
 ```
 
-新写法：
+New code:
 
 ```dart
 MoNotifierProvider<AppModel>(
@@ -513,7 +545,7 @@ MoNotifierProvider<AppModel>(
 );
 ```
 
-旧的 `TopProvider.providers` 如果使用 provider 的 `SingleChildWidget`：
+Old `TopProvider.providers` using provider's `SingleChildWidget`:
 
 ```dart
 TopProvider(
@@ -524,7 +556,7 @@ TopProvider(
 );
 ```
 
-迁移为：
+Migrate to:
 
 ```dart
 TopProvider(
@@ -535,63 +567,66 @@ TopProvider(
 );
 ```
 
-## API 一览
+## API Overview
 
-核心组件：
+Core widgets:
 
-* `ModelWidget<T extends Model>`
-* `LogicWidget<T extends Logic>`
-* `MoLcWidget<T extends Model, R extends Logic>`
-* `NoMoWidget<T>`
-* `NoMo2Widget<A, B>`
-* `NoMo3Widget<A, B, C>`
+- `ModelWidget<T extends Model>`
+- `LogicWidget<T extends Logic>`
+- `MoLcWidget<T extends Model, R extends Logic>`
+- `NoMoWidget<T>`
+- `NoMo2Widget<A, B>`
+- `NoMo3Widget<A, B, C>`
 
-核心类型：
+Core types:
 
-* `Model`
-* `WidgetModel`
-* `Logic`
-* `WidgetLogic`
-* `MoLogic<T extends Model>`
-* `TopModel`
+- `Model`
+- `WidgetModel`
+- `Logic`
+- `WidgetLogic`
+- `MoLogic<T extends Model>`
+- `TopModel`
 
-跨层能力：
+Cross-layer tools:
 
-* `TopProvider`
-* `top<T extends TopModel>()`
-* `ExposedMixin`
-* `find<T extends ExposedMixin>()`
-* `findFuzzy(String)`
+- `TopProvider`
+- `top<T extends TopModel>()`
+- `ExposedMixin`
+- `find<T extends ExposedMixin>()`
+- `findFuzzy(String)`
 
-刷新能力：
+Refresh tools:
 
-* `Model.refresh()`
-* `SelectorMixin<T>`
-* `EventModel<T>`
-* `EventConsumerMixin`
-* `Mutable<T>`
-* `MutableWidget`
+- `Model.refresh()`
+- `SelectorMixin<T>`
+- `EventModel<T>`
+- `EventConsumerMixin`
+- `Mutable<T>`
+- `MutableWidget`
 
-原生注入层：
+Native injection layer:
 
-* `MoProvider<T>`
-* `MoNotifierProvider<T extends ChangeNotifier>`
-* `MoMultiProvider`
-* `moProvider<T>()`
-* `moProviderValue<T>()`
-* `moNotifierProvider<T>()`
-* `moNotifierProviderValue<T>()`
-* `context.read<T>()`
-* `context.watch<T>()`
+- `MoProvider<T>`
+- `MoNotifierProvider<T extends ChangeNotifier>`
+- `MoMultiProvider`
+- `moProvider<T>()`
+- `moProviderValue<T>()`
+- `moNotifierProvider<T>()`
+- `moNotifierProviderValue<T>()`
+- `context.read<T>()`
+- `context.watch<T>()`
 
-## 适用场景
+## Fit
 
-MoLc 适合：
+MoLc fits:
 
-* 中小型到中大型 Flutter App；
-* 页面状态较多、组件拆分较多的业务项目；
-* 希望保留 Flutter 原生 Widget 思维，但减少状态和逻辑混杂的项目；
-* 不想引入重型状态框架，但需要跨页面共享、局部刷新、逻辑复用的项目。
+- small to medium Flutter apps;
+- larger business apps with many page states and components;
+- projects that want to keep Flutter's native widget model while reducing
+  mixed UI state and business logic;
+- projects that do not want a heavy state framework but still need shared
+  state, partial refresh, and reusable logic.
 
-不建议把 MoLc 用成完全全局化的数据流。`top<T>()`、`find<T>()`、`Mutable<T>` 都是为
-特定工程问题准备的工具，应按场景使用。
+MoLc should not be used as a fully globalized data flow. `top<T>()`,
+`find<T>()`, and `Mutable<T>` solve specific engineering problems and should be
+used intentionally.
