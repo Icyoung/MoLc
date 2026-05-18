@@ -16,9 +16,11 @@ MoLc focuses on practical Flutter app structure:
 
 - **Model / Logic separation**: widgets declare UI, models hold UI state, and
   logic objects coordinate actions, requests, navigation, and side effects.
-- **Context-tree access where Flutter is awkward**: descendants can access
-  ancestors with `context.read<T>()`, while `top<T>()` and `find<T>()` cover
-  app-level, parent-to-child, and sibling access patterns.
+- **Context-tree access where Flutter is awkward**: descendants should access
+  ancestors with `context.read<T>()` or `context.watch<T>()`. `top<T>()` is for
+  app-root global models or repositories, while `ExposedMixin` plus `find<T>()`
+  is for non-descendant access such as parent-to-child, sibling, or active
+  object lookup.
 - **Logic reuse**: logic can be organized outside widgets and exposed only when
   another component needs to call it.
 - **Selective rebuilds**: `SelectorMixin` lets a model decide whether a refresh
@@ -321,10 +323,17 @@ final appModel = context.read<AppModel>();
 final sameModel = top<AppModel>();
 ```
 
+Use `context.read<T>()` or `context.watch<T>()` when a widget is a descendant of
+the provider. Use `top<T>()` when there is no useful widget context, or when a
+logic/model/repository needs to reach an app-root `TopModel` or repo registered
+under `TopProvider`.
+
 Rules:
 
 - Only one `TopProvider` can be mounted at a time.
 - `top<T>()` can be called only after a `TopProvider` is mounted.
+- `top<T>()` is for top-level global models or repositories, not ordinary
+  parent lookup from child widgets.
 - In widget tests, tear down the previous root with
   `pumpWidget(const SizedBox.shrink())` before mounting another `TopProvider`.
 
@@ -371,9 +380,14 @@ Prefer enums or stable value objects.
 
 ## ExposedMixin
 
-`InheritedWidget` is best for child-to-parent access. Some apps also need
-parent-to-child access, sibling access, or non-widget layers calling active
-logic. `ExposedMixin` registers an active object in MoLc's container.
+`InheritedWidget` and MoLc's provider layer are best for child-to-parent access:
+if the caller is a descendant, use `context.read<T>()` or `context.watch<T>()`.
+
+Some apps also need non-descendant access: a parent needs to call a child,
+sibling components need to reach each other, or non-widget layers need to call
+the currently active logic. `ExposedMixin` and `find<T>()` are the paired API
+for that case: mix in `ExposedMixin` on the object that may be found, then use
+`find<T>()` to look up the last active instance.
 
 ```dart
 class DetailModel extends Model with ExposedMixin {
@@ -399,7 +413,10 @@ find<DetailLogic>()?.scrollToTop();
 
 Rules:
 
+- `ExposedMixin` and `find<T>()` are intended to be used together.
 - `find<T>()` returns the last active registered instance of type `T`.
+- Do not use `find<T>()` for normal child-to-parent reads; use
+  `context.read<T>()` or `context.watch<T>()` instead.
 - Objects are removed from the active registry when their `ModelWidget` or
   `LogicWidget` unmounts.
 - External `.value` objects are not disposed, but they are removed from the
@@ -457,23 +474,24 @@ MutableWidget(
 );
 ```
 
-Reading `count.value` registers the current `MutableWidget` as a subscriber.
-Writing `count.value` refreshes every `MutableWidget` that depends on it.
+Reading `count.value` inside a `MutableWidget` builder registers that widget as
+a subscriber. Writing `count.value` refreshes every `MutableWidget` that
+depends on it.
 
-Design note: the static build-phase delegate inside `Mutable` is intentional.
-It relies on Flutter widget builds running synchronously on one isolate. When a
+Design note: the scoped build observer inside `Mutable` is intentional. It
+relies on Flutter widget builds running synchronously on one isolate. When a
 builder reads `value`, `Mutable` captures the currently building
 `MutableWidget` and creates an automatic subscription, giving MoLc GetX-like
-dependency tracking. Do not replace it with an explicit subscription API unless
-the automatic tracking model is changing.
+dependency tracking. Reads outside a `MutableWidget` builder are plain reads
+and do not subscribe anything.
 
 Rules:
 
-- Read `Mutable.value` synchronously inside a `MutableWidget` builder.
+- Read `Mutable.value` synchronously inside a `MutableWidget` builder when you
+  want to subscribe that widget.
+- Read `Mutable.value` outside a builder when you only need the current value.
 - Write `Mutable.value` from event callbacks, async callbacks, or other normal
   application code.
-- Do not read `Mutable.value` or implicitly call `toString()` without a
-  `MutableWidget` context, because there is no widget to bind the refresh to.
 - `MutableWidget` supports nesting and multiple widgets subscribing to the same
   `Mutable`.
 

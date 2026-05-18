@@ -8,8 +8,10 @@ import 'provider.dart';
 /// Mixin that registers the current instance in the [CoreContainer] so it can
 /// be looked up from anywhere via [find()].
 ///
-/// Use this when you need parent-to-child access, sibling-to-sibling access,
-/// or non-widget layers (e.g. [Logic]) calling into an active model/logic.
+/// If the caller is a descendant widget, prefer `context.read<T>()` or
+/// `context.watch<T>()`. Use [ExposedMixin] together with [find] when you need
+/// non-descendant access: parent-to-child calls, sibling-to-sibling calls, or
+/// non-widget layers (e.g. [Logic]) calling into an active model/logic.
 ///
 ///     class DetailModel extends Model with ExposedMixin {
 ///       void reload() {}
@@ -20,6 +22,10 @@ import 'provider.dart';
 ///     find<DetailModel>()?.reload();
 ///
 /// ## Rules
+/// - [ExposedMixin] and [find] are paired: mix in [ExposedMixin] on the object
+///   that can be found, then call [find] for the active instance.
+/// - Do not use [find] for ordinary child-to-parent reads. Use provider
+///   context APIs for that.
 /// - `find<T>()` returns the last-registered instance of type `T`.
 /// - The instance is automatically removed when the owning widget unmounts.
 /// - External objects (`.value` constructors) are **not** disposed, but are
@@ -138,6 +144,8 @@ mixin ExposedContainerMixin on TopModel {
 /// Find the last-registered [ExposedMixin] of type [T].
 ///
 /// Returns `null` if no instance of [T] is currently active.
+/// Prefer [MoReadContext.read] / [MoWatchContext.watch] when the caller is a
+/// descendant widget. Use [find] for non-descendant active-object lookup.
 ///
 ///     find<DetailModel>()?.reload();
 ///

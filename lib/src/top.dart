@@ -9,6 +9,11 @@ import 'provider.dart';
 /// [TopModel] instances can be accessed from anywhere in the app using
 /// [top()] or [MoReadContext.read()].
 ///
+/// For normal child-to-parent access from widgets, prefer
+/// `context.read<T>()` or `context.watch<T>()`. Use [top] when there is no
+/// useful widget context, or when logic/model/repository code needs an
+/// app-root global model or repository registered under [TopProvider].
+///
 /// Mix in [EventModel] to support event-driven local refresh:
 ///
 ///     class AppModel extends TopModel with EventModel<AppEvent> {}
@@ -22,12 +27,15 @@ class TopModel extends Model {
 /// Retrieve a [TopModel] from the app root.
 ///
 /// This is a convenience function that works from any [BuildContext]-free
-/// context (e.g. inside [Logic], [Model] methods, or utility functions).
+/// context (e.g. inside [Logic], [Model] methods, repositories, or utility
+/// functions).
 ///
 ///     final appModel = top<AppModel>();
 ///
 /// To read within a widget, prefer [MoReadContext.read()] or
 /// [MoWatchContext.watch()] for type-safe context-based access.
+/// [top] is for app-root global models/repositories, not ordinary ancestor
+/// lookup from descendant widgets.
 ///
 /// Throws if no [TopProvider] is mounted. Check [TopModel.isReady] first.
 T top<T extends TopModel>() {

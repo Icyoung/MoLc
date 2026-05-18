@@ -29,34 +29,41 @@ const int _mutableSize = 3;
 ///
 /// ## How it works
 /// [Mutable] relies on Flutter's single-threaded event loop. The [value]
-/// getter captures the current [MutableWidget] via a static delegate set
-/// during the widget's build phase. This enables automatic subscription
-/// and unsubscription without explicit API calls.
+/// getter captures the current [MutableWidget] only while that widget is
+/// synchronously running its builder. Reads outside a [MutableWidget] builder
+/// simply return the current value without subscribing.
 ///
-/// This static build-phase delegate is intentional. It is the mechanism that
-/// gives [Mutable] GetX-like automatic dependency tracking while Flutter runs
-/// widget builds synchronously on one isolate. Do not replace it with an
-/// explicit subscription API unless the automatic tracking model is changing.
+/// This scoped build observer is intentional. It is the mechanism that gives
+/// [Mutable] GetX-like automatic dependency tracking while Flutter runs widget
+/// builds synchronously on one isolate. Do not replace it with an explicit
+/// subscription API unless the automatic tracking model is changing.
 ///
 /// ## Rules
-/// - [value] must be read synchronously inside a [MutableWidget] builder.
+/// - Reading [value] inside a [MutableWidget] builder subscribes that widget.
+/// - Reading [value] outside a [MutableWidget] builder is allowed and does not
+///   subscribe anything.
 /// - [value] can be written from event callbacks, async callbacks, etc.
-/// - Do not read [value] (or call [toString]) outside a [MutableWidget]
-///   context — there is no widget to bind the refresh to.
 /// - [MutableWidget] supports nesting and multiple widgets subscribing to
 ///   the same [Mutable].
 class Mutable<T> extends RefreshDelegate {
   late final Queue<T> _data;
 
   /// Read the current value and register the surrounding [MutableWidget]
-  /// as a subscriber.
+  /// as a subscriber when inside a [MutableWidget] builder.
   ///
-  /// Must be called synchronously inside a [MutableWidget] builder.
+  /// Outside a [MutableWidget] builder this only reads the current value.
   T get value {
-    final entry = RefreshDelegate._delegate!;
-    _refreshMap ??= <Object, RefreshCallback>{};
-    _refreshMap![entry.key] = entry.value;
+    final observer = RefreshDelegate._observer;
+    if (observer != null) {
+      _subscribe(observer);
+    }
     return _data.last;
+  }
+
+  void _subscribe(_MutableState observer) {
+    _refreshMap ??= <_MutableState, RefreshCallback>{};
+    _refreshMap![observer] = observer.refresh;
+    observer._recordDependency(this);
   }
 
   /// Set a new value and notify all subscribers.
@@ -71,9 +78,9 @@ class Mutable<T> extends RefreshDelegate {
     _data.add(value);
 
     final removeSet = <Object>{};
-    _refreshMap?.forEach((k, v) {
-      if (!v.call()) removeSet.add(k);
-    });
+    for (final entry in [...?_refreshMap?.entries]) {
+      if (!entry.value.call()) removeSet.add(entry.key);
+    }
     for (final e in removeSet) {
       _refreshMap?.remove(e);
     }
@@ -90,8 +97,8 @@ class Mutable<T> extends RefreshDelegate {
 
 /// A widget that enables [Mutable] values to trigger rebuilds.
 ///
-/// During build, it sets a static delegate so that any [Mutable.value]
-/// read inside [builder] can register this widget as a subscriber.
+/// During build, it sets a scoped observer so that any [Mutable.value] read
+/// inside [builder] can register this widget as a subscriber.
 ///
 /// When a subscribed [Mutable] is written to, this widget triggers a rebuild.
 ///
@@ -109,6 +116,9 @@ class MutableWidget extends StatefulWidget {
 }
 
 class _MutableState extends State<MutableWidget> {
+  final Set<RefreshDelegate> _dependencies = <RefreshDelegate>{};
+  final Set<RefreshDelegate> _buildDependencies = <RefreshDelegate>{};
+
   /// Called by [Mutable] when its value changes. Returns `true` if still mounted.
   bool refresh() {
     if (mounted) {
@@ -117,24 +127,56 @@ class _MutableState extends State<MutableWidget> {
     return mounted;
   }
 
+  void _recordDependency(RefreshDelegate dependency) {
+    _buildDependencies.add(dependency);
+  }
+
   @override
   Widget build(BuildContext context) {
-    RefreshDelegate._delegate = MapEntry(this, refresh);
-    return widget.builder(context);
+    final previousObserver = RefreshDelegate._observer;
+    _buildDependencies.clear();
+    RefreshDelegate._observer = this;
+    try {
+      return widget.builder(context);
+    } finally {
+      RefreshDelegate._observer = previousObserver;
+
+      for (final dependency in _dependencies.difference(_buildDependencies)) {
+        dependency._removeSubscriber(this);
+      }
+      _dependencies
+        ..clear()
+        ..addAll(_buildDependencies);
+      _buildDependencies.clear();
+    }
+  }
+
+  @override
+  void dispose() {
+    for (final dependency in _dependencies) {
+      dependency._removeSubscriber(this);
+    }
+    _dependencies.clear();
+    _buildDependencies.clear();
+    super.dispose();
   }
 }
 
-/// Base class for [Mutable] that holds the static build-phase delegate.
+/// Base class for [Mutable] that holds the scoped build observer.
 ///
-/// The static [_delegate] is set by [MutableWidget] during its build method
-/// and is read by [Mutable.value] to register the current widget as a subscriber.
-/// This works safely because Flutter's build phase is synchronous and single-threaded.
+/// The static [_observer] is set by [MutableWidget] only while its builder is
+/// running and is read by [Mutable.value] to register the current widget as a
+/// subscriber. This works safely because Flutter's build phase is synchronous.
 /// It is a deliberate part of [Mutable]'s subscription model, not leftover
 /// global state.
 abstract class RefreshDelegate {
-  static MapEntry<Object, RefreshCallback>? _delegate;
+  static _MutableState? _observer;
 
-  Map<Object, RefreshCallback>? _refreshMap;
+  Map<_MutableState, RefreshCallback>? _refreshMap;
+
+  void _removeSubscriber(_MutableState observer) {
+    _refreshMap?.remove(observer);
+  }
 }
 
 /// Convert a [String] to a [Mutable<String>].

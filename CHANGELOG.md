@@ -2,6 +2,13 @@
 
 ## Unreleased
 
+### Fixes
+- Make `Mutable.value` safe to read outside `MutableWidget` builders without
+  subscribing stale widgets, while preserving automatic scoped dependency
+  tracking during builds.
+- Recollect `MutableWidget` dependencies on each build and unsubscribe from
+  dependencies that are no longer read.
+
 ### Docs / tooling
 - Make English the default README and move the Chinese documentation to
   `README.zh-CN.md`, linked from the English README.

@@ -12,8 +12,9 @@ MoLc 是一个轻量 Flutter 状态管理与页面架构组件。它的核心目
 MoLc 关注以下工程问题：
 
 * **Model / Logic 分离**：Widget 只负责声明 UI，状态放在 Model，业务动作放在 Logic。
-* **上下文树访问补全**：支持子 context 访问父级对象，也支持通过 `top<T>()` 和
-  `find<T>()` 做跨页面、父访问子、兄弟组件访问。
+* **上下文树访问补全**：子节点访问父级对象应优先使用 `context.read<T>()` /
+  `context.watch<T>()`；`top<T>()` 用于顶层全局 Model / repo；
+  `ExposedMixin` + `find<T>()` 成对用于非子节点访问父、父访问子、兄弟组件访问或活跃对象查找。
 * **逻辑复用**：Logic 可以脱离 Widget 组织业务行为，也可以按需暴露给其他组件调用。
 * **精准刷新**：Model 可以通过 `SelectorMixin` 决定是否刷新。
 * **全局状态局部刷新**：TopModel 可以按事件刷新指定消费者，避免全局 Model 更新导致整棵 App rebuild。
@@ -304,10 +305,15 @@ final appModel = context.read<AppModel>();
 final sameModel = top<AppModel>();
 ```
 
+如果当前 widget 是 provider 的子节点，优先使用 `context.read<T>()` 或
+`context.watch<T>()`。当没有合适的 widget context，或者 Logic / Model / repo 需要访问
+注册在 `TopProvider` 下的顶层全局对象时，再使用 `top<T>()`。
+
 规则：
 
 * 一个 App 同时只能挂载一个 `TopProvider`。
 * `top<T>()` 只能在 `TopProvider` 已经挂载后使用。
+* `top<T>()` 面向顶层全局 Model / repo，不用于普通子节点访问父节点。
 * 测试中需要先 `pumpWidget(const SizedBox.shrink())` 卸载旧树，再挂新 `TopProvider`。
 
 ## 全局 Model 局部刷新
@@ -353,9 +359,12 @@ listenTopModelEvent(
 
 ## ExposedMixin
 
-`InheritedWidget` 只能自然支持子 context 访问父 context。业务中有时需要父组件访问子组件、
-兄弟组件互相访问，或者在非 Widget 层调用当前活跃的 Logic。`ExposedMixin` 用来把当前
-活跃对象注册到 MoLc 容器中。
+`InheritedWidget` 和 MoLc provider 层最适合子节点访问父节点：如果调用方是子节点，
+优先使用 `context.read<T>()` 或 `context.watch<T>()`。
+
+业务中有时需要非子节点访问：父组件访问子组件、兄弟组件互相访问，或者在非 Widget 层调用
+当前活跃的 Logic。`ExposedMixin` 和 `find<T>()` 是成对使用的 API：
+被查找的对象 mix in `ExposedMixin`，调用方再通过 `find<T>()` 查找当前活跃实例。
 
 ```dart
 class DetailModel extends Model with ExposedMixin {
@@ -381,7 +390,10 @@ find<DetailLogic>()?.scrollToTop();
 
 规则：
 
+* `ExposedMixin` 和 `find<T>()` 应成对使用。
 * `find<T>()` 返回当前活跃的最后一个 `T` 实例。
+* 子节点访问父节点不要使用 `find<T>()`，应使用 `context.read<T>()` /
+  `context.watch<T>()`。
 * 对象从 `ModelWidget` / `LogicWidget` 卸载时会自动移除注册。
 * `.value` 外部对象不会被 dispose，但也会在 widget 卸载时从活跃注册中移除。
 * `findFuzzy(String)` 仍可用于字符串查找，但新代码推荐使用 `find<T>()`。
@@ -433,20 +445,19 @@ MutableWidget(
 );
 ```
 
-读取 `count.value` 时，当前 `MutableWidget` 会被注册为依赖者。
+在 `MutableWidget` builder 中读取 `count.value` 时，当前 `MutableWidget` 会被注册为依赖者。
 写入 `count.value` 时，所有依赖它的 `MutableWidget` 会刷新。
 
-设计备注：`Mutable` 内部的静态 build-phase delegate 是刻意设计，不是残留的全局状态。
-它利用 Flutter widget build 在单 isolate 上同步执行的模型，在读取 `value` 时自动捕获当前
-`MutableWidget` 并建立订阅，从而实现接近 GetX 的自动依赖追踪。除非要改变这套自动追踪语义，
-否则不应把它改成显式订阅 API。
+设计备注：`Mutable` 内部的 scoped build observer 是刻意设计，不是残留的全局状态。
+它利用 Flutter widget build 在单 isolate 上同步执行的模型，在 builder 中读取 `value`
+时自动捕获当前 `MutableWidget` 并建立订阅，从而实现接近 GetX 的自动依赖追踪。
+在 builder 外读取 `value` 只是普通读取，不会订阅任何 widget。
 
 规则：
 
-* `Mutable.value` 应该在 `MutableWidget` 的 builder 同步读取。
+* 想订阅当前 widget 时，在 `MutableWidget` 的 builder 中同步读取 `Mutable.value`。
+* 只需要当前值时，可以在 builder 外读取 `Mutable.value`。
 * 可以在事件回调、异步回调中写入 `Mutable.value`。
-* 不要在没有 `MutableWidget` 上下文的地方读取 `Mutable.value` 或隐式调用
-  `toString()`，否则没有可绑定的刷新目标。
 * `MutableWidget` 支持嵌套，也支持多个 widget 监听同一个 `Mutable` 值。
 
 ## 简单值组件

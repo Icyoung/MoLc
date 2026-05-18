@@ -1,3 +1,3 @@
 # Project Memory
 
-- mem-0001 [mutable,architecture] Mutable static delegate is intentional
+- mem-0001 [mutable,architecture] Mutable scoped observer is intentional
