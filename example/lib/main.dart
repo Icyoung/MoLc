@@ -6,163 +6,117 @@ import 'package:molc/molc.dart';
 void main() {
   runApp(
     TopProvider(
-      providers: topModels,
-      child: MaterialApp(
-        home: MainPage(),
+      providers: [
+        moNotifierProvider<AppConfigModel>((_) => AppConfigModel()),
+        moNotifierProvider<DashboardEventModel>((_) => DashboardEventModel()),
+      ],
+      child: const MaterialApp(
+        debugShowCheckedModeBanner: false,
+        home: DashboardPage(),
       ),
     ),
   );
 }
 
-final topModels = [
-  moNotifierProvider((_) => TestEventModel()),
-];
+enum DashboardEvent { profileReloaded }
 
-enum TestEvent { event1, event2, event3, event4 }
+class AppConfigModel extends TopModel {
+  String environment = 'staging';
+  String baseUrl = 'https://staging.api.example.com';
 
-class TestEventModel extends TopModel with EventModel<TestEvent> {}
+  void toggleEnvironment() {
+    refresh(() {
+      if (environment == 'staging') {
+        environment = 'production';
+        baseUrl = 'https://api.example.com';
+      } else {
+        environment = 'staging';
+        baseUrl = 'https://staging.api.example.com';
+      }
+    });
+  }
+}
 
-class MainPage extends StatelessWidget {
-  MainPage({super.key});
+class DashboardEventModel extends TopModel with EventModel<DashboardEvent> {}
 
-  final abc = 100.mt;
+class ApiService {
+  Future<String> getProfileSummary() async {
+    final config = top<AppConfigModel>();
+    await Future<void>.delayed(const Duration(milliseconds: 250));
+    return 'GET ${config.baseUrl}/profile';
+  }
+}
 
-  final def = 999.mt;
+class UserRepository {
+  UserRepository(this._api);
 
-  final ghi = 100.mt;
+  final ApiService _api;
+
+  Future<String> loadProfileSummary() {
+    return _api.getProfileSummary();
+  }
+}
+
+final userRepository = UserRepository(ApiService());
+
+class DashboardPage extends StatelessWidget {
+  const DashboardPage({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return MoLcWidget<_MainModel, _MainLogic>(
-      modelCreate: (_) => _MainModel(),
-      logicCreate: (_) => _MainLogic(),
+    return MoLcWidget<DashboardModel, DashboardLogic>(
+      modelCreate: (_) => DashboardModel(),
+      logicCreate: (_) => DashboardLogic(userRepository),
       init: (_, model, logic) => logic.init(model),
-      builder: (_, model, logic, __) {
-        debugPrint('build==>$runtimeType');
+      builder: (context, model, logic, _) {
+        final config = context.watch<AppConfigModel>();
+
         return Scaffold(
-          appBar: AppBar(),
-          body: CustomScrollView(
-            slivers: [
-              SliverToBoxAdapter(
-                child: Container(
-                  color: Colors.white,
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      TextButton(
-                        onPressed: () {
-                          model.refresh();
-                        },
-                        child: const Text('refresh MainModel'),
-                      ),
-                      TextButton(
-                        onPressed: () {
-                          context
-                              .read<TestEventModel>()
-                              .refreshEvent(TestEvent.event4);
-                          logic.listen();
-                        },
-                        child: const Text('refresh event4'),
-                      ),
-                      TextButton(
-                        onPressed: () {
-                          find<_Part1Model>()?.refresh();
-                        },
-                        child: const Text('refresh Part1'),
-                      ),
-                      const Part1(),
-                      const SizedBox(
-                        height: 20,
-                      ),
-                      const Part2(),
-                      const SizedBox(
-                        height: 20,
-                      ),
-                      const Part3(),
-                      const SizedBox(
-                        height: 20,
-                      ),
-                      const Part4(),
-                      const SizedBox(
-                        height: 20,
-                      ),
-                      NoMoWidget<int>(
-                        value: 99,
-                        builder: (_, model, __) {
-                          debugPrint('build==>$runtimeType');
-                          return Row(
-                            children: [
-                              Text(
-                                'nomo2:${model.value}',
-                              ),
-                              TextButton(
-                                onPressed: () {
-                                  model
-                                    ..value += 1
-                                    ..refresh();
-                                },
-                                child: const Text('refresh _NoMo2'),
-                              ),
-                            ],
-                          );
-                        },
-                      ),
-                      const SizedBox(
-                        height: 20,
-                      ),
-                    ],
-                  ),
+          appBar: AppBar(
+            title: const Text('MoLc layered example'),
+            actions: [
+              TextButton(
+                onPressed: config.toggleEnvironment,
+                child: Text(
+                  config.environment,
+                  style: const TextStyle(color: Colors.white),
                 ),
               ),
-              SliverToBoxAdapter(
-                child: SizedBox(
-                  height: 100,
-                  child: ListView.builder(
-                    itemCount: 10,
-                    itemBuilder: (_, __) => Column(
-                      children: [
-                        MutableWidget(
-                          (context) => Row(
-                            children: [
-                              Text(def.value.toString()),
-                              TextButton(
-                                  onPressed: () {
-                                    def.value -= 1;
-                                  },
-                                  child: const Text('-1')),
-                              MutableWidget(
-                                (context) => Row(
-                                  children: [
-                                    Text((ghi.value + abc.value).toString()),
-                                    TextButton(
-                                        onPressed: () {
-                                          ghi.value += 1;
-                                        },
-                                        child: const Text('+1')),
-                                  ],
-                                ),
-                              )
-                            ],
-                          ),
-                        ),
-                        MutableWidget(
-                          (context) => Row(
-                            children: [
-                              Text(abc.value.toString()),
-                              TextButton(
-                                  onPressed: () {
-                                    abc.value += 1;
-                                  },
-                                  child: const Text('+1')),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
+            ],
+          ),
+          body: ListView(
+            padding: const EdgeInsets.all(16),
+            children: [
+              Text('App base URL: ${config.baseUrl}'),
+              const SizedBox(height: 12),
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: [
+                  FilledButton(
+                    onPressed: logic.reloadProfile,
+                    child: const Text('Load through repository'),
                   ),
-                ),
+                  OutlinedButton(
+                    onPressed: logic.pingExposedPanel,
+                    child: const Text('Ping exposed sibling'),
+                  ),
+                  OutlinedButton(
+                    onPressed: logic.refreshEventConsumers,
+                    child: const Text('Notify event consumers'),
+                  ),
+                ],
               ),
+              const SizedBox(height: 16),
+              _ProfileSummaryCard(model: model),
+              const SizedBox(height: 16),
+              const _ActivityPanel(),
+              const SizedBox(height: 16),
+              const _EventConsumerPanel(),
+              const SizedBox(height: 16),
+              const _MutableCounterPanel(),
+              const SizedBox(height: 16),
+              const _TemporaryStatePanel(),
             ],
           ),
         );
@@ -171,147 +125,232 @@ class MainPage extends StatelessWidget {
   }
 }
 
-class _MainModel extends WidgetModel {}
+class DashboardModel extends Model {
+  bool loading = false;
+  String summary = 'No request yet.';
+}
 
-class _MainLogic extends Logic {
-  StreamController? controller;
-  StreamSubscription? sub;
+class DashboardLogic extends MoLogic<DashboardModel> {
+  DashboardLogic(this._repository);
 
-  void init(_MainModel model) {
-    model.context.read<TestEventModel>();
-    controller = StreamController();
-    listen();
+  final UserRepository _repository;
+
+  void init(DashboardModel model) {}
+
+  Future<void> reloadProfile() async {
+    refresh(() {
+      model.loading = true;
+      model.summary = 'Loading...';
+    });
+
+    final summary = await _repository.loadProfileSummary();
+
+    refresh(() {
+      model.loading = false;
+      model.summary = summary;
+    });
   }
 
-  listen() {
-    sub?.cancel();
-    sub = controller?.stream.asBroadcastStream().listen((event) {
-      debugPrint('$event');
+  void pingExposedPanel() {
+    find<_ActivityPanelModel>()?.addEntry('Pinged by DashboardLogic');
+  }
+
+  void refreshEventConsumers() {
+    top<DashboardEventModel>().refreshEvent(DashboardEvent.profileReloaded);
+  }
+}
+
+class _ProfileSummaryCard extends StatelessWidget {
+  const _ProfileSummaryCard({required this.model});
+
+  final DashboardModel model;
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'Repository + top<AppConfigModel>()',
+              style: TextStyle(fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 8),
+            Text(model.summary),
+            if (model.loading) ...[
+              const SizedBox(height: 12),
+              const LinearProgressIndicator(),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _ActivityPanel extends StatelessWidget {
+  const _ActivityPanel();
+
+  @override
+  Widget build(BuildContext context) {
+    return ModelWidget<_ActivityPanelModel>(
+      create: (_) => _ActivityPanelModel(),
+      builder: (_, model, __) {
+        return Card(
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'Exposed sibling panel',
+                  style: TextStyle(fontWeight: FontWeight.bold),
+                ),
+                const SizedBox(height: 8),
+                Text(model.latestEntry),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+}
+
+class _ActivityPanelModel extends Model with ExposedMixin {
+  String latestEntry = 'Waiting for another component to call find<T>().';
+
+  void addEntry(String entry) {
+    refresh(() {
+      latestEntry = '$entry at ${DateTime.now().toIso8601String()}';
     });
   }
 }
 
-class Part1 extends StatelessWidget {
-  const Part1({super.key});
+class _EventConsumerPanel extends StatelessWidget {
+  const _EventConsumerPanel();
 
   @override
   Widget build(BuildContext context) {
-    return ModelWidget<_Part1Model>(
-      create: (_) => _Part1Model(),
-      builder: (_, model, __) {
-        debugPrint('build==>$runtimeType');
-        return Row(
-          children: [
-            Text(
-              'part1:${model.part1Num}',
+    return MoLcWidget<_EventPanelModel, _EventPanelLogic>(
+      modelCreate: (_) => _EventPanelModel(),
+      logicCreate: (_) => _EventPanelLogic(),
+      init: (_, model, logic) => logic.init(model),
+      builder: (_, model, __, ___) {
+        return Card(
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'TopModel event consumer',
+                  style: TextStyle(fontWeight: FontWeight.bold),
+                ),
+                const SizedBox(height: 8),
+                Text('Event refreshes: ${model.refreshCount}'),
+              ],
             ),
-            TextButton(
-              onPressed: () {
-                model.part1Num += 1;
-                model.refresh();
-              },
-              child: const Text('refresh _Part1Model'),
-            ),
-          ],
+          ),
         );
       },
     );
   }
 }
 
-class _Part1Model extends Model with ExposedMixin {
-  int part1Num = 66;
+class _EventPanelModel extends Model with EventConsumerMixin {
+  int refreshCount = 0;
 }
 
-class Part2 extends StatelessWidget {
-  const Part2({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return LogicWidget<_Part2Logic>(
-      create: (_) => _Part2Logic(),
-      init: (_, logic) => logic.init(),
-      builder: (context, logic) {
-        debugPrint('build==>$runtimeType');
-        return Row(
-          children: [
-            TextButton(
-              onPressed: () {
-                logic.request(context);
-              },
-              child: const Text('_Part2Logic.request\nthen refresh _MainModel'),
-            ),
-          ],
-        );
+class _EventPanelLogic extends MoLogic<_EventPanelModel> {
+  void init(_EventPanelModel model) {
+    model.listenTopModelEvent(
+      DashboardEvent.profileReloaded,
+      refresh: () {
+        refresh(() {
+          this.model.refreshCount += 1;
+        });
       },
     );
   }
 }
 
-class _Part2Logic extends Logic {
-  void init() {}
+class _MutableCounterPanel extends StatefulWidget {
+  const _MutableCounterPanel();
 
-  void request(BuildContext context) async {
-    await Future.delayed(const Duration(seconds: 1));
-    if (!context.mounted) return;
-    context.read<_MainModel>().refresh();
+  @override
+  State<_MutableCounterPanel> createState() => _MutableCounterPanelState();
+}
+
+class _MutableCounterPanelState extends State<_MutableCounterPanel> {
+  final Mutable<int> _localCount = 0.mt;
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: MutableWidget(
+          (_) {
+            return Row(
+              children: [
+                const Expanded(
+                  child: Text(
+                    'Mutable local counter',
+                    style: TextStyle(fontWeight: FontWeight.bold),
+                  ),
+                ),
+                Text('${_localCount.value}'),
+                IconButton(
+                  onPressed: () {
+                    _localCount.value += 1;
+                  },
+                  icon: const Icon(Icons.add),
+                ),
+              ],
+            );
+          },
+        ),
+      ),
+    );
   }
 }
 
-class Part3 extends StatelessWidget {
-  const Part3({super.key});
+class _TemporaryStatePanel extends StatelessWidget {
+  const _TemporaryStatePanel();
 
   @override
   Widget build(BuildContext context) {
     return NoMoWidget<int>(
-      value: 99,
+      value: 0,
       builder: (_, model, __) {
-        debugPrint('build==>$runtimeType');
-        return Row(
-          children: [
-            Text(
-              'nomo:${model.value}',
+        return Card(
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Row(
+              children: [
+                const Expanded(
+                  child: Text(
+                    'NoMoWidget temporary state',
+                    style: TextStyle(fontWeight: FontWeight.bold),
+                  ),
+                ),
+                Text('${model.value}'),
+                IconButton(
+                  onPressed: () {
+                    model.refresh(() {
+                      model.value += 1;
+                    });
+                  },
+                  icon: const Icon(Icons.add),
+                ),
+              ],
             ),
-            TextButton(
-              onPressed: () {
-                model
-                  ..value += 1
-                  ..refresh();
-              },
-              child: const Text('refresh _NoMo'),
-            ),
-          ],
+          ),
         );
       },
     );
-  }
-}
-
-class Part4 extends StatelessWidget {
-  const Part4({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return MoLcWidget<_Part4Model, _Part4Logic>(
-        modelCreate: (_) => _Part4Model(),
-        logicCreate: (_) => _Part4Logic(),
-        init: (_, model, logic) => logic.init(model),
-        builder: (_, model, logic, __) {
-          debugPrint('build==>$runtimeType');
-
-          return Row(
-            children: const [
-              Text('part4'),
-            ],
-          );
-        });
-  }
-}
-
-class _Part4Model extends Model with ExposedMixin, EventConsumerMixin {}
-
-class _Part4Logic extends Logic {
-  void init(_Part4Model model) {
-    model.listenTopModelEvent(TestEvent.event4);
   }
 }

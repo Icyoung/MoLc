@@ -9,6 +9,10 @@
 .history
 .svn/
 
+# Local agent instructions/state
+AGENTS.md
+CLAUDE.md
+
 # ufoo local runtime/state
 .ufoo/
 
