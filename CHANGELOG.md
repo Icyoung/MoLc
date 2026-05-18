@@ -1,5 +1,24 @@
 # Changelog
 
+## 0.2.1
+
+### Fixes
+- Run `refresh(fn)` callbacks before `SelectorMixin` decides whether to notify
+  listeners, so callback-style state updates use the same semantics as
+  mutating state before calling `refresh()`.
+- Reconnect `MoLogic` to the current `modelValue` when `MoLcWidget.value`
+  receives a replacement model instance.
+
+### Docs / tooling
+- Document that `Mutable` intentionally uses a static build-phase delegate for
+  GetX-like automatic dependency tracking on Flutter's synchronous build model.
+- Add focused widget tests for `MutableWidget`, provider error paths,
+  `top<T>()` pre-mount errors, selector callback refresh, and
+  `MoLcWidget.value` model replacement.
+- Add package metadata and `.pubignore` entries so local agent files and
+  generated artifacts are excluded from the published package.
+- Replace the example app's template README with MoLc-specific usage notes.
+
 ## 0.2.0
 
 ### Breaking changes

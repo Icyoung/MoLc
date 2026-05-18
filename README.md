@@ -23,7 +23,7 @@ MoLc 关注以下工程问题：
 
 ```yaml
 dependencies:
-  molc: ^0.2.0
+  molc: ^0.2.1
 ```
 
 ```dart
